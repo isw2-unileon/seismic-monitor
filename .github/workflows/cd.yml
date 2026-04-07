@@ -1,0 +1,58 @@
+name: Continuous Deployment (Frontend)
+
+# 1. Triggers: Define cuándo se ejecuta este pipeline
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "frontend/**"
+      - ".github/workflows/cd.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 2. Copia los archivos del proyecto al servidor por SCP seguro
+      - name: Copy Frontend Files to Server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DO_HOST }}
+          username: ${{ secrets.DO_USER }}
+          key: ${{ secrets.DO_SSH_KEY }}
+          source: "frontend/*"
+          target: "/opt/seismic-monitor"
+
+      # 3. Se conecta por SSH y ejecuta los comandos de construcción
+      - name: Build and Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DO_HOST }}
+          username: ${{ secrets.DO_USER }}
+          key: ${{ secrets.DO_SSH_KEY }}
+          script: |
+            # A. Instalación defensiva: Comprueba si Docker existe, si no, lo instala
+            if ! command -v docker &> /dev/null; then
+              echo "Installing Docker Engine..."
+              curl -fsSL https://get.docker.com -o get-docker.sh
+              sh get-docker.sh
+            fi
+
+            # B. Navega al directorio donde SCP dejó los archivos
+            cd /opt/seismic-monitor/frontend
+
+            # C. Construye la imagen Multi-Stage (Nginx + Vue)
+            docker build -t seismic-frontend:latest .
+
+            # D. Detiene y elimina el contenedor viejo (si existe) para evitar conflictos de puertos
+            docker stop seismic-frontend-container || true
+            docker rm seismic-frontend-container || true
+
+            # E. Levanta el nuevo contenedor exponiendo el puerto 80 al exterior
+            docker run -d --name seismic-frontend-container -p 80:80 seismic-frontend:latest
+
+            # F. Mantenimiento: Limpia imágenes residuales para no llenar el disco del Droplet
+            docker image prune -f
