@@ -1,0 +1,19 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-5.5671, 42.5987] 
+      },
+      "properties": {
+        "id": "usgs-id-12345",
+        "magnitude": 4.5,
+        "place": "10 km W of León, Spain",
+        "time": "2026-03-31T15:00:00Z",
+        "depth_km": 12.5
+      }
+    }
+  ]
+}
