@@ -4,38 +4,44 @@ import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { apiService } from '../services/api'
 
-// shallowRef is mandatory here. It prevents Vue's reactivity system
-// from proxying Leaflet's massive internal object, avoiding severe memory leaks.
+// shallowRef prevents Vue's reactivity system from proxying Leaflet's internal object, avoiding memory leaks.
 const mapContainer = shallowRef(null)
 const mapInstance = shallowRef(null)
 
 onMounted(async () => {
-  // 1. Defensive check: Ensure the DOM element exists before attaching Leaflet
   if (!mapContainer.value) {
     console.error('Map container is not ready in the DOM.')
     return
   }
 
-  // 2. Initialize the map centered near León, Spain
-  mapInstance.value = L.map(mapContainer.value).setView([42.5987, -5.5671], 5)
+  const earthBounds = L.latLngBounds([
+    [-90, -180],
+    [90, 180],
+  ])
 
-  // 3. Attach OpenStreetMap base tiles
+  mapInstance.value = L.map(mapContainer.value, {
+    center: [42.5987, -5.5671],
+    zoom: 5,
+    minZoom: 3,
+    maxBounds: earthBounds,
+    maxBoundsViscosity: 1.0,
+  })
+
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
+    noWrap: true, // Prevents infinite horizontal panning
+    bounds: earthBounds,
     attribution: '© OpenStreetMap',
   }).addTo(mapInstance.value)
 
-  // 4. Asynchronously fetch GeoJSON data from our mock API service
   try {
     const geoJsonData = await apiService.getEarthquakes()
 
-    // 5. Parse and render the GeoJSON features on the map
     L.geoJSON(geoJsonData, {
-      // Transform default markers into CircleMarkers to reflect earthquake magnitude
       pointToLayer: (feature, latlng) => {
         const magnitude = feature.properties.magnitude || 1
         return L.circleMarker(latlng, {
-          radius: magnitude * 3, // Visual scaling based on magnitude
+          radius: magnitude * 3,
           fillColor: '#ff4444',
           color: '#222',
           weight: 1,
@@ -43,7 +49,6 @@ onMounted(async () => {
           fillOpacity: 0.7,
         })
       },
-      // Attach interactive popups to each point
       onEachFeature: (feature, layer) => {
         if (feature.properties) {
           const time = new Date(feature.properties.time).toLocaleString()
@@ -59,13 +64,12 @@ onMounted(async () => {
       },
     }).addTo(mapInstance.value)
   } catch (error) {
-    // In a real scenario, this should trigger a UI toast/alert, not just a console log
+    // TODO: Replace with UI toast/alert in production
     console.error('Critical failure fetching seismic data:', error)
   }
 })
 
 onUnmounted(() => {
-  // Strict memory management: destroy Leaflet instance when navigating away from the view
   if (mapInstance.value) {
     mapInstance.value.remove()
   }
@@ -81,7 +85,7 @@ onUnmounted(() => {
 <style scoped>
 .map-wrapper {
   width: 100%;
-  height: 100vh; /* Takes full viewport height */
+  height: 100vh;
   display: flex;
   flex-direction: column;
 }
@@ -89,6 +93,6 @@ onUnmounted(() => {
 .seismic-map {
   flex-grow: 1;
   width: 100%;
-  z-index: 1; /* Ensures map stays below fixed headers/modals if added later */
+  z-index: 1; /* Keeps map below future fixed headers/modals */
 }
 </style>
