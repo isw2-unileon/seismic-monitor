@@ -1,0 +1,58 @@
+name: Go Continuous Integration
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  test:
+    name: Build, Lint and Test
+    runs-on: ubuntu-latest
+
+    services:
+      postgis:
+        image: postgis/postgis:15-3.3
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpassword
+          POSTGRES_DB: seismic_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Golang
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+          cache: true
+
+      # NUEVO PASO: Ejecución del linter usando vuestro .golangci.yml
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+          working-directory: ./backend # Ajustad esto a la ruta real de vuestro Go
+
+      - name: Install Dependencies
+        working-directory: ./backend
+        run: go mod download
+
+      - name: Run Unit and Integration Tests
+        working-directory: ./backend
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: testuser
+          DB_PASSWORD: testpassword
+          DB_NAME: seismic_test
+        run: go test -v -race -cover ./...
