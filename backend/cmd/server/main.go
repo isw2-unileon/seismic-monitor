@@ -10,6 +10,8 @@ import (
 	"syscall"
 	"time"
 
+	"seismic-monitor/internal/ingest"
+
 	"github.com/gin-gonic/gin"
 	"github.com/isw2-unileon/proyect-scaffolding/backend/internal/config"
 )
@@ -42,6 +44,24 @@ func main() {
 		WriteTimeout: 10 * time.Second,
 	}
 
+	stopWorker := make(chan bool)
+
+	ingestTask := func() {
+		url := "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson"
+		logger.Info("Iniciando polling al USGS...")
+
+		data, err := ingest.FetchData(url)
+		if err != nil {
+			logger.Error("Error al obtener datos", "error", err)
+			return
+		}
+
+		logger.Info("Datos recibidos del USGS", "bytes", len(data))
+		// TODO: Deserializar a Structs y guardar en PostgreSQL
+	}
+
+	go ingest.StartIngestionWorker(60*time.Second, stopWorker, ingestTask)
+
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
@@ -55,6 +75,8 @@ func main() {
 
 	<-ctx.Done()
 	slog.Info("shutting down server")
+
+	stopWorker <- true
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

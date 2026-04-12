@@ -10,11 +10,10 @@ func TestFetchSeismicData(t *testing.T) {
 	// Creamos un servidor de prueba para no llamar a la API real
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"type": "FeatureCollection", "features": []}`)) // Respuesta mínima válida
+		w.Write([]byte(`{"type": "FeatureCollection", "features": []}`))
 	}))
 	defer server.Close()
 
-	// Intentamos obtener datos de nuestro servidor de prueba
 	data, err := FetchData(server.URL)
 
 	if err != nil {

@@ -12,7 +12,7 @@ func FetchData(url string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error al conectar con USGS: %w", err)
 	}
-	// Muy importante en Go: liberar el recurso al terminar la función
+
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
