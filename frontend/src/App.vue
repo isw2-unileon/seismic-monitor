@@ -1,18 +1,22 @@
 <script setup>
-import SeismicMap from './components/SeismicMap.vue'
+import { RouterView } from 'vue-router'
 </script>
 
 <template>
-  <main>
-    <SeismicMap />
-  </main>
+  <RouterView />
 </template>
 
 <style>
-/* Reset global para evitar márgenes blancos alrededor del mapa */
+/* Reset global: El mapa y el login deben ocupar todo el espacio disponible */
 body {
   margin: 0;
   padding: 0;
   overflow: hidden;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+#app {
+  width: 100vw;
+  height: 100vh;
 }
 </style>
