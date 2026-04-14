@@ -99,16 +99,16 @@ onUnmounted(() => {
       <transition name="fade">
         <nav v-if="isMenuOpen" class="dropdown-menu">
           <button @click="navigateTo('account')" class="menu-item">
-            <span class="icon-placeholder">👤</span>
+            <img :src="accountIcon" alt="" class="menu-icon" />
             Account
           </button>
           <button @click="navigateTo('history')" class="menu-item">
-            <span class="icon-placeholder">🌍</span>
+            <img :src="earthquakesIcon" alt="" class="menu-icon" />
             Earthquakes
           </button>
           <div class="menu-divider"></div>
           <button @click="handleLogout" class="menu-item logout">
-            <span class="icon-placeholder">🚪</span>
+            <img :src="logoutIcon" alt="" class="menu-icon" />
             Logout
           </button>
         </nav>
@@ -185,8 +185,10 @@ onUnmounted(() => {
   font-size: 1rem;
 }
 
-.icon-placeholder {
-  font-size: 1.2rem;
+.menu-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
 }
 
 .menu-divider {
