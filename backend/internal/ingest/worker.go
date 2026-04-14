@@ -2,11 +2,12 @@ package ingest
 
 import (
 	"fmt"
+	"seismic-monitor/internal/ports"
 	"time"
 )
 
 // StartIngestionWorker inicia un bucle infinito en segundo plano
-func StartIngestionWorker(interval time.Duration, stopChan <-chan bool, task func()) {
+func StartIngestionWorker(interval time.Duration, stopChan <-chan bool, provider ports.EarthquakeProvider) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
@@ -15,7 +16,16 @@ func StartIngestionWorker(interval time.Duration, stopChan <-chan bool, task fun
 	for {
 		select {
 		case <-ticker.C:
-			task()
+			// Llamamos al proveedor sin saber si es el USGS, otra API o un mock de testing
+			fmt.Println("Buscando nuevos sismos...")
+			response, err := provider.GetEarthquakes()
+			if err != nil {
+				fmt.Printf("Error obteniendo datos: %v\n", err)
+				continue
+			}
+			fmt.Printf("Se procesaron %d sismos exitosamente.\n", len(response.Features))
+			// TODO: Guardar response.Features en Base de Datos
+
 		case <-stopChan:
 			fmt.Println("Deteniendo el motor de ingesta...")
 			return
