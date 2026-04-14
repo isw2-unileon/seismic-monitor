@@ -14,6 +14,8 @@ import (
 	"seismic-monitor/internal/database"
 	"seismic-monitor/internal/ingest"
 	"seismic-monitor/internal/ports/providers/usgs"
+	"seismic-monitor/internal/ports/spatial"
+	"seismic-monitor/internal/models"
 
 	"github.com/gin-gonic/gin"
 )
@@ -60,7 +62,13 @@ func main() {
 	usgsURL := "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson"
 	provider := &usgs.USGSEarthquakeProvider{URL: usgsURL}
 
-	go ingest.StartIngestionWorker(60*time.Second, stopWorker, provider)
+	type DummySpatial struct{}
+	func (d *DummySpatial) GetAffectedUsers(s models.Feature) ([]models.User, error) {
+		return []models.User{}, nil // No devuelve afectados por ahora
+	}
+
+	// Y se lo pasas al worker:
+	go ingest.StartIngestionWorker(60*time.Second, stopWorker, provider, &DummySpatial{})
 
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 	defer stop()
