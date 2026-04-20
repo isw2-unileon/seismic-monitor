@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  db:
+    # Official image of PostGIS mandatory for GEOGRAPHY data type to work
+    image: postgis/postgis:15-3.3
+    container_name: seismic_db
+    restart: always
+    environment:
+      POSTGRES_USER: db
+      POSTGRES_PASSWORD: AVNS_BHXOWlutew_acMTYe28
+      POSTGRES_DB: db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d seismic_monitor"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
