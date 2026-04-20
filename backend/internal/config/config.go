@@ -9,6 +9,7 @@ type Config struct {
 	GinMode         string
 	CORSAllowOrigin string
 	DatabaseURL     string // NUEVO: URL de conexión a PostgreSQL
+	JWTSecret       string // Clave para firmar tokens
 }
 
 // Load reads configuration from environment variables with sensible defaults.
@@ -20,6 +21,7 @@ func Load() *Config {
 		// Añadimos la lectura de la URL de base de datos.
 		// El fallback asume una base local estándar sin SSL, útil para desarrollo.
 		DatabaseURL: getEnv("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/seismic_db?sslmode=disable"),
+		JWTSecret:   getEnv("JWT_SECRET", "super-secret-key-change-me"),
 	}
 }
 

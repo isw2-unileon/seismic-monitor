@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/seismic-monitor/backend/internal/models"
+	"seismic-monitor/backend/internal/models"
 )
 
 // --- EL MOCK ---

@@ -10,10 +10,13 @@ import (
 	"syscall"
 	"time"
 
-	"seismic-monitor/internal/config"
-	"seismic-monitor/internal/database"
-	"seismic-monitor/internal/ingest"
-	"seismic-monitor/internal/ports/providers/usgs"
+	"seismic-monitor/backend/internal/auth"
+	"seismic-monitor/backend/internal/config"
+	"seismic-monitor/backend/internal/database"
+	"seismic-monitor/backend/internal/ingest"
+	"seismic-monitor/backend/internal/api/handlers"
+	"seismic-monitor/backend/internal/api/middleware"
+	"seismic-monitor/backend/internal/ports/providers/usgs"
 
 	"github.com/gin-gonic/gin"
 )
@@ -34,14 +37,45 @@ func main() {
 	defer db.Close()
 	logger.Info("Conexión a PostgreSQL establecida con éxito")
 
+	// 2. Inicializar repositorios y servicios
+	userRepo := database.NewUserRepository(db)
+	earthquakeRepo := database.NewEarthquakeRepository(db)
+	jwtService := auth.NewJWTService(cfg.JWTSecret)
+
+	// 3. Inicializar handlers
+	authHandler := handlers.NewAuthHandler(userRepo, jwtService)
+	userHandler := handlers.NewUserHandler(userRepo)
+	earthquakeHandler := handlers.NewEarthquakeHandler(earthquakeRepo)
+
 	gin.SetMode(cfg.GinMode)
 
 	r := gin.New()
 	r.Use(gin.Logger(), gin.Recovery())
 
+	// Habilitar CORS si es necesario (puedes añadir middleware aquí más tarde)
+
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
+
+	apiV1 := r.Group("/api/v1")
+	{
+		// Rutas públicas
+		apiV1.GET("/earthquakes", earthquakeHandler.GetEarthquakes)
+
+		users := apiV1.Group("/users")
+		{
+			users.POST("/register", authHandler.Register)
+			users.POST("/login", authHandler.Login)
+		}
+
+		// Rutas protegidas
+		protected := apiV1.Group("/")
+		protected.Use(middleware.AuthMiddleware(jwtService))
+		{
+			protected.PUT("/users/location", userHandler.UpdateLocation)
+		}
+	}
 
 	api := r.Group("/api")
 	api.GET("/hello", func(c *gin.Context) {
