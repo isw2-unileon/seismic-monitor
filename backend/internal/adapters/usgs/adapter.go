@@ -3,7 +3,7 @@ package usgs
 import (
 	"fmt"
 
-	"seismic-monitor/internal/models"
+	"seismic-monitor/backend/internal/models"
 )
 
 // USGSAdapter es el adaptador que se conecta al exterior.

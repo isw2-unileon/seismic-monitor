@@ -5,11 +5,18 @@ type USGSResponse struct {
 	Features []Earthquake `json:"features"`
 }
 
-// Earthquake representa un evento sísmico individual
+// Earthquake representa un evento sísmico individual (Feature en GeoJSON)
 type Earthquake struct {
 	ID       string             `json:"id"`
+	Type     string             `json:"type"` // "Feature"
 	Info     EarthquakeProps    `json:"properties"`
 	Geometry EarthquakeGeometry `json:"geometry"`
+}
+
+// FeatureCollection es el contenedor raíz para GeoJSON
+type FeatureCollection struct {
+	Type     string       `json:"type"` // "FeatureCollection"
+	Features []Earthquake `json:"features"`
 }
 
 // EarthquakeProps contiene los detalles del sismo
