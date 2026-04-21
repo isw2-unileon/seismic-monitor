@@ -42,13 +42,13 @@ jobs:
           PGPASSWORD: testpassword
         run: |
           psql -h localhost -U testuser -d seismic_test -f ./backend/migrations/000001_init_schema.up.sql
-        
+
       # Execution of linter using .golangci.yml
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
-            version: latest
-            working-directory: ./backend 
+          version: latest
+          working-directory: ./backend 
 
       - name: Install Dependencies
         working-directory: ./backend
