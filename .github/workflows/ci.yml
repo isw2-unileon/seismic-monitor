@@ -36,12 +36,19 @@ jobs:
           go-version: "1.22"
           cache: true
 
-      # NUEVO PASO: Ejecución del linter usando vuestro .golangci.yml
+      - name: Run Database Migrations
+        env:
+          # PGPASSWORD is a standard environment variable that psql reads automatically
+          PGPASSWORD: testpassword
+        run: |
+          psql -h localhost -U testuser -d seismic_test -f ./backend/migrations/000001_init_schema.up.sql
+        
+      # Execution of linter using .golangci.yml
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
-          version: latest
-          working-directory: ./backend # Ajustad esto a la ruta real de vuestro Go
+            version: latest
+            working-directory: ./backend 
 
       - name: Install Dependencies
         working-directory: ./backend
