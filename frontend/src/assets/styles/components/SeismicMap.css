@@ -1,0 +1,43 @@
+/* Estilos existentes se mantienen */
+.map-wrapper { position: relative; width: 100vw; height: 100vh; background-color: #1a1a2e; overflow: hidden; }
+.seismic-map { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+.controls-overlay { position: absolute; top: 20px; right: 20px; z-index: 10000; display: flex; gap: 15px; pointer-events: none; }
+.controls-overlay > * { pointer-events: auto; }
+
+.action-buttons { display: flex; gap: 8px; }
+
+/* Botones específicos */
+.confirm-btn { background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
+.delete-trigger-btn { background: #e94560; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
+.cancel-btn { background: #16213e; color: white; border: 2px solid #e94560; padding: 10px 15px; border-radius: 8px; cursor: pointer; }
+
+/* Desplegable de confirmación */
+.confirm-dropdown {
+  background: #16213e;
+  border: 1px solid #e94560;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+  color: white;
+  text-align: center;
+}
+.confirm-dropdown p { margin: 0 0 10px 0; font-size: 0.9rem; }
+.confirm-actions { display: flex; gap: 10px; justify-content: center; }
+
+.btn-confirm-yes { background: #e94560; border: none; color: white; padding: 5px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+.btn-confirm-no { background: transparent; border: 1px solid #a0aab2; color: #a0aab2; padding: 5px 15px; border-radius: 4px; cursor: pointer; }
+
+/* Estilos de menú heredados */
+.hamburger-btn { background: #16213e; border: 2px solid #e94560; padding: 12px; border-radius: 8px; cursor: pointer; display: flex; flex-direction: column; gap: 4px; }
+.bar { width: 24px; height: 3px; background-color: white; display: block; }
+.dropdown-menu { position: absolute; top: 60px; right: 0; background: #16213e; border: 1px solid #2a3158; border-radius: 8px; min-width: 200px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+.menu-item { width: 100%; display: flex; align-items: center; gap: 15px; padding: 15px; background: none; border: none; color: #fff; cursor: pointer; font-size: 1rem; }
+.menu-icon { width: 20px; height: 20px; object-fit: contain; }
+.menu-divider { height: 1px; background: #2a3158; }
+.logout { color: #e94560; }
+
+/* Transiciones */
+.fade-enter-active, .fade-leave-active { transition: all 0.3s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; transform: translateY(-10px); }
+.slide-enter-active, .slide-leave-active { transition: transform 0.3s ease, opacity 0.3s; }
+.slide-enter-from, .slide-leave-to { transform: translateX(20px); opacity: 0; }

@@ -2,7 +2,7 @@ package ingest
 
 import (
 	"fmt"
-	"seismic-monitor/internal/ports"
+	"seismic-monitor/backend/internal/ports"
 	"time"
 )
 
