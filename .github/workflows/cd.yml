@@ -52,7 +52,7 @@ jobs:
             docker rm seismic-frontend-container || true
 
             # E. Levanta el nuevo contenedor exponiendo el puerto 80 al exterior
-            docker run -d --name seismic-frontend-container -p 80:80 seismic-frontend:latest
+            docker run -d --name seismic-frontend-container -p 80:80 --add-host host.docker.internal:host-gateway seismic-frontend:latest
 
             # F. Mantenimiento: Limpia imágenes residuales para no llenar el disco del Droplet
             docker image prune -f
