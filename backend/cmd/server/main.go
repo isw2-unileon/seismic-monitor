@@ -16,7 +16,7 @@ import (
 	"seismic-monitor/backend/internal/ingest"
 	"seismic-monitor/backend/internal/api/handlers"
 	"seismic-monitor/backend/internal/api/middleware"
-	"seismic-monitor/backend/internal/ports/providers/usgs"
+	"seismic-monitor/backend/internal/adapters/usgs"
 
 	"github.com/gin-gonic/gin"
 )
@@ -92,7 +92,7 @@ func main() {
 	stopWorker := make(chan bool)
 
 	usgsURL := "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson"
-	provider := &usgs.USGSEarthquakeProvider{URL: usgsURL}
+	provider := &usgs.USGSAdapter{URL: usgsURL}
 
 	go ingest.StartIngestionWorker(60*time.Second, stopWorker, provider)
 

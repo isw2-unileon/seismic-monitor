@@ -6,14 +6,13 @@ import (
 
 // User representa la estructura de un usuario en el sistema
 type User struct {
-	ID           int       `json:"id"`
+	ID           string    `json:"id"`
 	Email        string    `json:"email" binding:"required,email"`
 	PasswordHash string    `json:"-"` // Ocultar en JSON
 	Latitude     float64   `json:"latitude"`
 	Longitude    float64   `json:"longitude"`
 	AlertRadius  float64   `json:"alert_radius"`
 	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
 }
 
 // RegisterRequest es el DTO para el registro de usuarios

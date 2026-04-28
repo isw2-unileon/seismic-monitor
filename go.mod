@@ -1,6 +1,6 @@
-module seismic-monitor/backend
+module seismic-monitor
 
-go 1.24.0
+go 1.25.0
 
 require (
 	github.com/gin-gonic/gin v1.10.0
@@ -42,5 +42,3 @@ require (
 	google.golang.org/protobuf v1.34.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace seismic-monitor/backend => ./backend
