@@ -1,33 +1,53 @@
 package ingest
 
 import (
-	"fmt"
-	"seismic-monitor/backend/internal/ports"
+	"log"
 	"time"
+
+	"github.com/isw2-unileon/seismic-monitor/backend/internal/ports"
 )
 
-// StartIngestionWorker inicia un bucle infinito en segundo plano
-func StartIngestionWorker(interval time.Duration, stopChan <-chan bool, provider ports.EarthquakeProvider) {
+// StartIngestionWorker ahora recibe el proveedor de sismos y el repositorio espacial
+func StartIngestionWorker(interval time.Duration, stopChan <-chan bool, provider ports.EarthquakeProvider, spatialRepo ports.SpatialRepository) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
-	fmt.Printf("Motor de ingesta iniciado cada %v\n", interval)
+	log.Printf("Motor de ingesta iniciado cada %v\n", interval)
 
 	for {
 		select {
 		case <-ticker.C:
-			// Llamamos al proveedor sin saber si es el USGS, otra API o un mock de testing
-			fmt.Println("Buscando nuevos sismos...")
+			log.Println("[Worker] Solicitando datos al proveedor...")
 			response, err := provider.GetEarthquakes()
 			if err != nil {
-				fmt.Printf("Error obteniendo datos: %v\n", err)
+				log.Printf("[Worker] Error obteniendo sismos: %v\n", err)
 				continue
 			}
-			fmt.Printf("Se procesaron %d sismos exitosamente.\n", len(response.Features))
-			// TODO: Guardar response.Features en Base de Datos
+
+			// Iteramos sobre los sismos detectados
+			for _, sismo := range response.Features {
+				// TODO: Aquí irá la llamada para guardar el sismo en la Base de Datos.
+				// log.Printf("Guardando sismo %s en DB...", sismo.ID)
+
+				// 1. Buscamos colisiones (Usuarios afectados)
+				affectedUsers, err := spatialRepo.GetAffectedUsers(sismo)
+				if err != nil {
+					log.Printf("[Worker] Error buscando colisiones para el sismo %s: %v\n", sismo.ID, err)
+					continue
+				}
+
+				// 2. Imprimimos el formato requerido para el Sprint 2
+				if len(affectedUsers) > 0 {
+					log.Printf("¡Peligro! El sismo %s afecta a %d usuarios", sismo.ID, len(affectedUsers))
+					for _, user := range affectedUsers {
+						// Scaffolding para Sprint 3
+						log.Printf("Usuario %s en peligro por sismo %s", user.Email, sismo.ID)
+					}
+				}
+			}
 
 		case <-stopChan:
-			fmt.Println("Deteniendo el motor de ingesta...")
+			log.Println("[Worker] Deteniendo el motor de ingesta...")
 			return
 		}
 	}
