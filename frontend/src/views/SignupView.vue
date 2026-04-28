@@ -10,46 +10,45 @@ const router = useRouter()
 const email = ref('')
 const password = ref('')
 const errorMessage = ref('')
+const successMessage = ref('')
 const isLoading = ref(false)
 
-const handleLogin = async () => {
-  // 1. Reset previous errors
+const handleSignup = async () => {
+  // 1. Reset previous messages
   errorMessage.value = ''
+  successMessage.value = ''
 
-  // 2. Client-side validation (Defensive programming to avoid unnecessary API calls)
+  // 2. Client-side validation
   if (!email.value || !password.value) {
     errorMessage.value = 'Both email and password are required.'
+    return
+  }
+  
+  if (password.value.length < 6) {
+    errorMessage.value = 'Password must be at least 6 characters long.'
     return
   }
 
   isLoading.value = true
 
   try {
-    // 3. Execute the mock API call
-    const response = await apiService.login({
+    // 3. Execute the API call
+    await apiService.register({
       email: email.value,
       password: password.value
     })
 
-    // 4. Validate the contract structure and persist the session
-    if (response.token) {
-      // Store the JWT to satisfy the Navigation Guard
-      localStorage.setItem('auth_token', response.token)
-      
-      // Store non-sensitive user data for UI purposes (like the alert radius)
-      localStorage.setItem('user_data', JSON.stringify(response.user))
+    successMessage.value = 'Registration successful! Redirecting to login...'
+    
+    // 4. Redirect to login after a short delay
+    setTimeout(() => {
+      router.push({ name: 'login' })
+    }, 2000)
 
-      // 5. Force redirect to the protected map view
-      router.push({ name: 'map' })
-    } else {
-      throw new Error('Invalid authentication payload received')
-    }
   } catch (error) {
-    // Catch generic errors or specific HTTP mock rejections
-    errorMessage.value = error.message || 'Authentication failed. Please verify your credentials.'
-    console.error('Login process aborted:', error)
+    errorMessage.value = error.message || 'Registration failed. Please try again.'
+    console.error('Registration process aborted:', error)
   } finally {
-    // Always remove the loading state, even if the request fails
     isLoading.value = false
   }
 }
@@ -60,10 +59,10 @@ const handleLogin = async () => {
     <div class="login-card">
       <div class="brand-header">
         <h1>Seismic Monitor</h1>
-        <p>Restricted Access</p>
+        <p>Create Account</p>
       </div>
 
-      <form @submit.prevent="handleLogin" class="auth-form">
+      <form @submit.prevent="handleSignup" class="auth-form">
         <div class="form-group">
           <label for="email">Email Address</label>
           <input
@@ -84,49 +83,37 @@ const handleLogin = async () => {
             type="password"
             placeholder="••••••••"
             :disabled="isLoading"
-            autocomplete="current-password"
+            autocomplete="new-password"
           />
         </div>
 
         <div v-if="errorMessage" class="error-banner">
           {{ errorMessage }}
         </div>
+        
+        <div v-if="successMessage" class="success-banner">
+          {{ successMessage }}
+        </div>
 
         <button type="submit" :disabled="isLoading" class="submit-btn">
-          {{ isLoading ? 'Authenticating...' : 'Secure Login' }}
+          {{ isLoading ? 'Creating Account...' : 'Sign Up' }}
         </button>
       </form>
-
+      
       <div class="auth-links">
-        <p>Don't have an account? <router-link to="/signup">Sign up here</router-link></p>
+        <p>Already have an account? <router-link to="/login">Log in here</router-link></p>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.auth-links {
-  margin-top: 1.5rem;
-  text-align: center;
-  color: #a0aab2;
-  font-size: 0.875rem;
-}
-
-.auth-links a {
-  color: #e94560;
-  text-decoration: none;
-}
-
-.auth-links a:hover {
-  text-decoration: underline;
-}
-
 .login-wrapper {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background-color: #1a1a2e; /* Dark theme appropriate for monitoring tools */
+  background-color: #1a1a2e;
   font-family: system-ui, -apple-system, sans-serif;
 }
 
@@ -201,6 +188,17 @@ const handleLogin = async () => {
   border: 1px solid #e94560;
 }
 
+.success-banner {
+  background-color: rgba(76, 175, 80, 0.1);
+  color: #4CAF50;
+  padding: 0.75rem;
+  border-radius: 4px;
+  margin-bottom: 1.5rem;
+  font-size: 0.875rem;
+  text-align: center;
+  border: 1px solid #4CAF50;
+}
+
 .submit-btn {
   width: 100%;
   padding: 0.875rem;
@@ -220,5 +218,21 @@ const handleLogin = async () => {
 .submit-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.auth-links {
+  margin-top: 1.5rem;
+  text-align: center;
+  color: #a0aab2;
+  font-size: 0.875rem;
+}
+
+.auth-links a {
+  color: #e94560;
+  text-decoration: none;
+}
+
+.auth-links a:hover {
+  text-decoration: underline;
 }
 </style>
