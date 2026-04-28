@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/isw2-unileon/seismic-monitor/backend/internal/models"
+	"seismic-monitor/backend/internal/models"
 )
 
 // --- MOCK DEL PROVEEDOR DE SISMOS ---

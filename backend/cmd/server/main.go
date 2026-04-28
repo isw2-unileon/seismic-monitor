@@ -101,10 +101,20 @@ func main() {
 		return []models.User{}, nil // No devuelve afectados por ahora
 	}
 
-	// Y se lo pasas al worker:
-	go ingest.StartIngestionWorker(60*time.Second, stopWorker, provider, &DummySpatial{})
+	// Emails
+	
+	// 1. Creamos la "Cola" en memoria (buffer de 100 mensajes)
+	alertQueue := make(chan models.AlertMessage, 100)
 
-	go ingest.StartIngestionWorker(60*time.Second, stopWorker, provider)
+	// 2. Instanciamos nuestro Adaptador de Emails (Mock)
+	emailAdapter := &email.MockSender{}
+
+	// 3. Arrancamos el Worker de Notificaciones (Consumidor)
+	go services.StartNotificationWorker(alertQueue, emailAdapter)
+
+	// 4. Arrancamos el Worker de Ingesta (Productor), pasándole la cola
+	go ingest.StartIngestionWorker(60*time.Second, stopWorker, provider, &DummySpatial{}, alertQueue)
+
 
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 	defer stop()
