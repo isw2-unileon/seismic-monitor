@@ -1,5 +1,3 @@
--- Eliminates earthquake table
+DROP TABLE IF EXISTS user_locations CASCADE;
 DROP TABLE IF EXISTS earthquake CASCADE;
-
--- Eliminates users table
 DROP TABLE IF EXISTS users CASCADE;
