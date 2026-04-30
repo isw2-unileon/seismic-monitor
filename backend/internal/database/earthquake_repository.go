@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"seismic-monitor/backend/internal/models"
+	"time"
 )
 
 type EarthquakeRepository struct {
@@ -63,4 +64,32 @@ func (r *EarthquakeRepository) SaveEarthquake(eq models.Earthquake) error {
 
 	_, err := r.DB.Exec(query, eq.ID, eq.Info.Mag, eq.Info.Place, eq.Info.Time, lon, lat, depth)
 	return err
+}
+
+func (r *EarthquakeRepository) GetEarthquakesSince(since time.Time) ([]models.Earthquake, error) {
+	query := `
+		SELECT id, magnitude, place, time, longitude, latitude, depth
+		FROM earthquakes
+		WHERE time >= $1
+		ORDER BY time DESC`
+
+	rows, err := r.DB.Query(query, since)
+	if err != nil {
+		return nil, fmt.Errorf("error al consultar sismos recientes: %w", err)
+	}
+	defer rows.Close()
+
+	var earthquakes []models.Earthquake
+	for rows.Next() {
+		var eq models.Earthquake
+		var lon, lat, depth float64
+		err := rows.Scan(&eq.ID, &eq.Info.Mag, &eq.Info.Place, &eq.Info.Time, &lon, &lat, &depth)
+		if err != nil {
+			return nil, fmt.Errorf("error al escanear sismo: %w", err)
+		}
+		eq.Geometry.Coordinates = []float64{lon, lat, depth}
+		earthquakes = append(earthquakes, eq)
+	}
+
+	return earthquakes, nil
 }
