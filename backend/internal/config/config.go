@@ -20,7 +20,7 @@ func Load() *Config {
 		CORSAllowOrigin: getEnv("CORS_ALLOW_ORIGIN", "*"),
 		// Añadimos la lectura de la URL de base de datos.
 		// El fallback asume una base local estándar sin SSL, útil para desarrollo.
-		DatabaseURL: getEnv("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/seismic_db?sslmode=disable"),
+		DatabaseURL: getEnv("DATABASE_URL", "postgres://postgres:postgres@127.0.0.1:5433/postgres?sslmode=disable"),
 		JWTSecret:   getEnv("JWT_SECRET", "super-secret-key-change-me"),
 	}
 }
