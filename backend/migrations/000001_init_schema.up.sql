@@ -1,7 +1,7 @@
 -- Allows the creation of the POSTGIS extension
 CREATE EXTENSION IF NOT EXISTS postgis;
 
--- Create users table
+-- 1. Create users table
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     username VARCHAR(50) UNIQUE NOT NULL,
@@ -14,10 +14,17 @@ CREATE TABLE users (
     last_login TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
--- 3. Crete spacial index for users
-CREATE INDEX idx_users_location ON users USING GIST (location);
+-- 2. Create user's earthquake alert locations table
+CREATE TABLE user_locations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    label VARCHAR(100), -- Opcional: "Casa", "Trabajo", etc.
+    location GEOGRAPHY(POINT, 4326) NOT NULL,
+    alert_radius_km NUMERIC NOT NULL DEFAULT 50,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
 
--- 4. Create earthquakes table with the USGS ID as primary key
+-- 3. Create earthquakes table with the USGS ID as primary key
 CREATE TABLE earthquake (
     usgs_id VARCHAR(50) PRIMARY KEY,
     richter_scale NUMERIC(4,2) NOT NULL,
@@ -28,6 +35,7 @@ CREATE TABLE earthquake (
     ingested_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
--- 5. Crear los índices para sismos
-CREATE INDEX idx_earthquake_location ON earthquake USING GIST (location);
+-- 5. Create indexes
+CREATE INDEX idx_user_locations_geom ON user_locations USING GIST (location);
+CREATE INDEX idx_earthquake_geom ON earthquake USING GIST (location);
 CREATE INDEX idx_earthquake_time ON earthquake (ocurred_at DESC);

@@ -5,14 +5,28 @@
       "type": "Feature",
       "geometry": {
         "type": "Point",
-        "coordinates": [-5.5671, 42.5987] 
+        "coordinates": [-5.5671, 42.5987]
       },
       "properties": {
-        "id": "usgs-id-12345",
-        "magnitude": 4.5,
-        "place": "10 km W of León, Spain",
-        "time": "2026-03-31T15:00:00Z",
-        "depth_km": 12.5
+        "id": "mock-recent-1",
+        "magnitude": 5.2,
+        "place": "Off the coast of Gijón, Spain",
+        "time": "2026-04-30T10:00:00Z",
+        "depth_km": 10.0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-3.7038, 40.4168]
+      },
+      "properties": {
+        "id": "mock-recent-2",
+        "magnitude": 3.8,
+        "place": "Madrid, Spain",
+        "time": "2026-04-30T10:15:00Z",
+        "depth_km": 5.0
       }
     }
   ]

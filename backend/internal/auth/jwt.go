@@ -15,7 +15,7 @@ type JWTService struct {
 
 // CustomClaims define la estructura de los datos contenidos en el token
 type CustomClaims struct {
-	UserID int `json:"user_id"`
+	UserID string `json:"user_id"`
 	jwt.RegisteredClaims
 }
 
@@ -28,7 +28,7 @@ func NewJWTService(secretKey string) *JWTService {
 }
 
 // GenerateToken crea un nuevo token para un usuario específico
-func (s *JWTService) GenerateToken(userID int) (string, error) {
+func (s *JWTService) GenerateToken(userID string) (string, error) {
 	claims := &CustomClaims{
 		UserID: userID,
 		RegisteredClaims: jwt.RegisteredClaims{

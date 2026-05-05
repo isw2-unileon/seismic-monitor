@@ -14,6 +14,7 @@ import (
 	"seismic-monitor/backend/internal/config"
 	"seismic-monitor/backend/internal/database"
 	"seismic-monitor/backend/internal/ingest"
+	"seismic-monitor/backend/internal/services"
 	"seismic-monitor/backend/internal/api/handlers"
 	"seismic-monitor/backend/internal/api/middleware"
 	"seismic-monitor/backend/internal/ports/providers"
@@ -42,12 +43,13 @@ func main() {
 	// 2. Inicializar repositorios y servicios
 	userRepo := database.NewUserRepository(db)
 	earthquakeRepo := database.NewEarthquakeRepository(db)
+	earthquakeService := services.NewEarthquakeService(earthquakeRepo)
 	jwtService := auth.NewJWTService(cfg.JWTSecret)
 
 	// 3. Inicializar handlers
 	authHandler := handlers.NewAuthHandler(userRepo, jwtService)
 	userHandler := handlers.NewUserHandler(userRepo)
-	earthquakeHandler := handlers.NewEarthquakeHandler(earthquakeRepo)
+	earthquakeHandler := handlers.NewEarthquakeHandler(earthquakeService)
 
 	gin.SetMode(cfg.GinMode)
 
@@ -64,6 +66,7 @@ func main() {
 	{
 		// Rutas públicas
 		apiV1.GET("/earthquakes", earthquakeHandler.GetEarthquakes)
+		apiV1.GET("/earthquakes/history", earthquakeHandler.GetHistory)
 
 		users := apiV1.Group("/users")
 		{
@@ -94,7 +97,7 @@ func main() {
 	stopWorker := make(chan bool)
 
 	usgsURL := "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson"
-	provider := &usgs.USGSEarthquakeProvider{URL: usgsURL}
+	provider := &usgs.USGSAdapter{URL: usgsURL}
 
 	type DummySpatial struct{}
 	func (d *DummySpatial) GetAffectedUsers(s models.Feature) ([]models.User, error) {
@@ -141,3 +144,4 @@ func main() {
 
 	logger.Info("server stopped")
 }
+

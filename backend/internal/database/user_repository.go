@@ -22,12 +22,12 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 
 // CreateUser inserta un nuevo usuario en la base de datos
 func (r *UserRepository) CreateUser(user *models.User) error {
-	query := `INSERT INTO users (email, password_hash, latitude, longitude, alert_radius, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`
+	query := `INSERT INTO users (username, email, password_hash, location, alert_radius_km, created_at) VALUES ($1, $2, $3, ST_SetSRID(ST_MakePoint($4, $5), 4326), $6, $7) RETURNING id`
 	
 	user.CreatedAt = time.Now()
-	user.UpdatedAt = time.Now()
+	username := user.Email // Usar el email como username ya que username es requerido
 
-	err := r.DB.QueryRow(query, user.Email, user.PasswordHash, user.Latitude, user.Longitude, user.AlertRadius, user.CreatedAt, user.UpdatedAt).Scan(&user.ID)
+	err := r.DB.QueryRow(query, username, user.Email, user.PasswordHash, user.Longitude, user.Latitude, user.AlertRadius, user.CreatedAt).Scan(&user.ID)
 	if err != nil {
 		return fmt.Errorf("error al crear usuario: %w", err)
 	}
@@ -37,8 +37,8 @@ func (r *UserRepository) CreateUser(user *models.User) error {
 // FindUserByEmail busca un usuario por su dirección de correo electrónico
 func (r *UserRepository) FindUserByEmail(email string) (*models.User, error) {
 	user := &models.User{}
-	query := `SELECT id, email, password_hash, latitude, longitude, alert_radius, created_at, updated_at FROM users WHERE email = $1`
-	err := r.DB.QueryRow(query, email).Scan(&user.ID, &user.Email, &user.PasswordHash, &user.Latitude, &user.Longitude, &user.AlertRadius, &user.CreatedAt, &user.UpdatedAt)
+	query := `SELECT id, email, password_hash, ST_Y(location::geometry) as latitude, ST_X(location::geometry) as longitude, alert_radius_km, created_at FROM users WHERE email = $1`
+	err := r.DB.QueryRow(query, email).Scan(&user.ID, &user.Email, &user.PasswordHash, &user.Latitude, &user.Longitude, &user.AlertRadius, &user.CreatedAt)
 
 	if err == sql.ErrNoRows {
 		return nil, nil // Usuario no encontrado
@@ -49,9 +49,9 @@ func (r *UserRepository) FindUserByEmail(email string) (*models.User, error) {
 }
 
 // UpdateUserLocation actualiza la latitud, longitud y radio de alerta de un usuario
-func (r *UserRepository) UpdateUserLocation(userID int, latitude, longitude, alertRadius float64) error {
-	query := `UPDATE users SET latitude = $1, longitude = $2, alert_radius = $3, updated_at = $4 WHERE id = $5`
-	err := r.DB.QueryRow(query, latitude, longitude, alertRadius, time.Now(), userID).Err()
+func (r *UserRepository) UpdateUserLocation(userID string, latitude, longitude, alertRadius float64) error {
+	query := `UPDATE users SET location = ST_SetSRID(ST_MakePoint($1, $2), 4326), alert_radius_km = $3 WHERE id = $4`
+	err := r.DB.QueryRow(query, longitude, latitude, alertRadius, userID).Err()
 	if err != nil {
 		return fmt.Errorf("error al actualizar la ubicación del usuario: %w", err)
 	}

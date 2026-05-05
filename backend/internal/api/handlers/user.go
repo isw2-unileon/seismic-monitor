@@ -32,7 +32,7 @@ func (h *UserHandler) UpdateLocation(c *gin.Context) {
 		return
 	}
 
-	if err := h.Repo.UpdateUserLocation(userID.(int), req.Latitude, req.Longitude, req.AlertRadius); err != nil {
+	if err := h.Repo.UpdateUserLocation(userID.(string), req.Latitude, req.Longitude, req.AlertRadius); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al actualizar la ubicación"})
 		return
 	}

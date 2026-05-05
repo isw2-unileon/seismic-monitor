@@ -6,6 +6,7 @@
 *.dylib
 bin/
 tmp/
+seismic-backend
 
 # Go
 *.test

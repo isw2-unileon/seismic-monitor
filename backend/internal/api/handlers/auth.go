@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 
 	"seismic-monitor/backend/internal/auth"
@@ -51,6 +52,8 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	}
 
 	if err := h.Repo.CreateUser(user); err != nil {
+		// Log the underlying error for debugging purposes
+		fmt.Printf("Error during CreateUser: %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "no se pudo crear el usuario"})
 		return
 	}

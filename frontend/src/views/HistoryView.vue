@@ -1,20 +1,159 @@
 <script setup>
-// Future implementation: Fetch global seismic history
+import { ref, onMounted } from 'vue';
+import { apiService } from '../services/api';
+
+const earthquakes = ref([]);
+const loading = ref(true);
+const error = ref(null);
+
+onMounted(async () => {
+  try {
+    loading.value = true;
+    const data = await apiService.getEarthquakesHistory();
+    if (data && data.features) {
+      earthquakes.value = data.features;
+    }
+  } catch (err) {
+    error.value = "Failed to load recent earthquakes.";
+    console.error(err);
+  } finally {
+    loading.value = false;
+  }
+});
+
+// Helper function to format the time
+const formatTime = (isoString) => {
+  const date = new Date(isoString);
+  return date.toLocaleString();
+};
+
 </script>
 
 <template>
   <div class="view-container">
-    <h1>Seismic History</h1>
-    <p>Historical earthquake data will be listed here.</p>
+    <h1>Seismic History (Last Hour)</h1>
+    
+    <div v-if="loading" class="loading">
+      Loading recent earthquakes...
+    </div>
+    
+    <div v-else-if="error" class="error">
+      {{ error }}
+    </div>
+    
+    <div v-else-if="earthquakes.length === 0" class="no-data">
+      No earthquakes recorded in the last hour.
+    </div>
+    
+    <div v-else class="earthquake-list">
+      <div v-for="eq in earthquakes" :key="eq.properties.id" class="earthquake-card">
+        <div class="eq-header">
+          <span class="magnitude" :class="{'high-mag': eq.properties.magnitude >= 5}">
+            M {{ eq.properties.magnitude.toFixed(1) }}
+          </span>
+          <span class="time">{{ formatTime(eq.properties.time) }}</span>
+        </div>
+        <div class="eq-details">
+          <p><strong>Location:</strong> {{ eq.properties.place }}</p>
+          <p><strong>Depth:</strong> {{ eq.properties.depth_km || eq.geometry.coordinates[2] }} km</p>
+          <p class="coords">
+            <strong>Coordinates:</strong> 
+            {{ eq.geometry.coordinates[1].toFixed(4) }}, {{ eq.geometry.coordinates[0].toFixed(4) }}
+          </p>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .view-container {
   padding: 2rem;
-  color: white;
+  color: #e0e0e0;
   background-color: #1a1a2e;
   min-height: 100vh;
   font-family: system-ui, -apple-system, sans-serif;
+}
+
+h1 {
+  color: #fff;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid #333;
+  padding-bottom: 0.5rem;
+}
+
+.loading, .error, .no-data {
+  padding: 1.5rem;
+  background-color: #242442;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 1.1rem;
+}
+
+.error {
+  color: #ff6b6b;
+  border: 1px solid #ff6b6b;
+}
+
+.earthquake-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.earthquake-card {
+  background-color: #242442;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s;
+  border-left: 4px solid #4a4a8a;
+}
+
+.earthquake-card:hover {
+  transform: translateY(-2px);
+}
+
+.eq-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #333;
+  padding-bottom: 0.75rem;
+}
+
+.magnitude {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #4cd137;
+  background-color: rgba(76, 209, 55, 0.1);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.magnitude.high-mag {
+  color: #e84118;
+  background-color: rgba(232, 65, 24, 0.1);
+}
+
+.time {
+  font-size: 0.9rem;
+  color: #a0a0b0;
+}
+
+.eq-details p {
+  margin: 0.5rem 0;
+  line-height: 1.4;
+}
+
+.eq-details strong {
+  color: #b0b0c0;
+}
+
+.coords {
+  font-size: 0.85rem;
+  color: #888;
+  margin-top: 0.75rem !important;
 }
 </style>
