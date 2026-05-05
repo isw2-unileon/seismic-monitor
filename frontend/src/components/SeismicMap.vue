@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted, shallowRef } from 'vue'
 import { useRouter } from 'vue-router'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
+import { apiService } from '../services/api'
 
 const router = useRouter()
 const isMenuOpen = ref(false)
@@ -131,6 +132,38 @@ onMounted(() => {
 
   layersGroup.addTo(mapInstance.value)
   tempLayer.addTo(mapInstance.value)
+
+  const earthquakesLayer = L.layerGroup().addTo(mapInstance.value)
+  apiService.getEarthquakesHistory().then(data => {
+    if (data && data.features) {
+      data.features.forEach(eq => {
+        const coords = [eq.geometry.coordinates[1], eq.geometry.coordinates[0]]
+        const mag = eq.properties.magnitude
+        
+        let color = '#4cd137'
+        if (mag >= 5) color = '#e84118'
+        else if (mag >= 3) color = '#fbc531'
+
+        const circle = L.circleMarker(coords, {
+          radius: Math.max(mag * 3, 5),
+          fillColor: color,
+          color: '#fff',
+          weight: 1,
+          opacity: 1,
+          fillOpacity: 0.8
+        }).addTo(earthquakesLayer)
+
+        const time = new Date(eq.properties.time).toLocaleString()
+        circle.bindPopup(`
+          <div style="font-family: sans-serif; text-align: center;">
+            <strong style="color: ${color}; font-size: 16px;">M ${mag.toFixed(1)}</strong><br>
+            <span style="font-size: 12px; color: #555;">${time}</span><br>
+            <div style="margin-top: 5px; font-size: 14px;">${eq.properties.place}</div>
+          </div>
+        `)
+      })
+    }
+  }).catch(console.error)
 
   mapInstance.value.on('click', (e) => {
     selectedMarkerId.value = null 
