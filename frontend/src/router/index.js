@@ -11,6 +11,12 @@ const router = createRouter({
       meta: { requiresAuth: false }
     },
     {
+      path: '/signup',
+      name: 'signup',
+      component: () => import('../views/SignupView.vue'),
+      meta: { requiresAuth: false }
+    },
+    {
       path: '/',
       name: 'map',
       component: SeismicMap,

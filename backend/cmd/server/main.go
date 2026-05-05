@@ -97,7 +97,7 @@ func main() {
 	usgsURL := "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson"
 	provider := &usgs.USGSAdapter{URL: usgsURL}
 
-	go ingest.StartIngestionWorker(60*time.Second, stopWorker, provider)
+	go ingest.StartIngestionWorker(60*time.Second, stopWorker, provider, earthquakeRepo)
 
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 	defer stop()

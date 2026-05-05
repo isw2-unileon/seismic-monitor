@@ -15,12 +15,12 @@ type Config struct {
 // Load reads configuration from environment variables with sensible defaults.
 func Load() *Config {
 	return &Config{
-		Port:            getEnv("PORT", "8080"),
+		Port:            getEnv("PORT", "8081"),
 		GinMode:         getEnv("GIN_MODE", "debug"),
 		CORSAllowOrigin: getEnv("CORS_ALLOW_ORIGIN", "*"),
 		// Añadimos la lectura de la URL de base de datos.
-		// El fallback asume una base local estándar sin SSL, útil para desarrollo.
-		DatabaseURL: getEnv("DATABASE_URL", "postgres://postgres:postgres@127.0.0.1:5433/postgres?sslmode=disable"),
+		// El fallback asume la base local configurada en docker-compose.yaml
+		DatabaseURL: getEnv("DATABASE_URL", "postgres://db:AVNS_BHXOWlutew_acMTYe28@localhost:5432/db?sslmode=disable"),
 		JWTSecret:   getEnv("JWT_SECRET", "super-secret-key-change-me"),
 	}
 }
