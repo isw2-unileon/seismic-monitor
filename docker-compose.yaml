@@ -8,14 +8,14 @@ services:
     restart: always
     environment:
       POSTGRES_USER: db
-      POSTGRES_PASSWORD: AVNS_BHXOWlutew_acMTYe28
+      POSTGRES_PASSWORD: postgres
       POSTGRES_DB: db
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin -d seismic_monitor"]
+      test: ["CMD-SHELL", "pg_isready -U db"]
       interval: 10s
       timeout: 5s
       retries: 5

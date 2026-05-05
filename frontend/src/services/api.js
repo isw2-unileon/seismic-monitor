@@ -3,20 +3,60 @@
 // Importación estática de los contratos JSON
 import earthquakesMock from './mocks/earthquakes.json';
 
-// Función auxiliar privada para simular latencia de red (ej. 800ms)
-// Esto es vital para comprobar que tu interfaz muestra estados de "Cargando..."
 const simulateNetworkLatency = (ms = 800) => new Promise(resolve => setTimeout(resolve, ms));
+const API_BASE_URL = '/api/v1';
+
+/**
+ * Helper to transform static mock data into dynamic data with recent timestamps.
+ */
+const prepareMockData = (data) => {
+  const now = new Date();
+  return {
+    ...data,
+    features: data.features.map((feature, index) => ({
+      ...feature,
+      properties: {
+        ...feature.properties,
+        // Generates times: 5m ago, 15m ago, 25m ago...
+        time: new Date(now.getTime() - (index * 10 + 5) * 60 * 1000).toISOString()
+      }
+    }))
+  };
+};
 
 export const apiService = {
-  /**
-   * Obtiene la lista de sismos recientes en formato GeoJSON.
-   */
   async getEarthquakes() {
-    await simulateNetworkLatency();
-    // Simula un código HTTP 200 OK devolviendo el mock directamente
-    return earthquakesMock;
+    try {
+      const response = await fetch(`${API_BASE_URL}/earthquakes`);
+      if (!response.ok) throw new Error('Network response was not ok');
+      return await response.json();
+    } catch (error) {
+      console.warn("Using dynamic mock data due to API failure");
+      await simulateNetworkLatency();
+      return prepareMockData(earthquakesMock);
+    }
   },
 
+  async getEarthquakesHistory() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/earthquakes/history`);
+      if (!response.ok) throw new Error('Network response was not ok');
+      return await response.json();
+    } catch (error) {
+      console.warn("Using dynamic mock data for history due to API failure");
+      await simulateNetworkLatency();
+      return prepareMockData(earthquakesMock);
+    }
+  },
+
+<<<<<<< HEAD
+  async login(credentials) {
+    await simulateNetworkLatency();
+    if (!credentials.email || !credentials.password) {
+      throw new Error("Missing email or password");
+    }
+    return authMock;
+=======
   /**
    * Simula el inicio de sesión de un usuario o conecta con el backend.
    * @param {Object} credentials - { email, password }
@@ -61,5 +101,6 @@ export const apiService = {
     }
 
     return await response.json();
+>>>>>>> b1ac3b915bac750d7595dcce04e4d70208896d44
   }
 };

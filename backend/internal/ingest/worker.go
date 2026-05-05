@@ -7,7 +7,7 @@ import (
 )
 
 // StartIngestionWorker inicia un bucle infinito en segundo plano
-func StartIngestionWorker(interval time.Duration, stopChan <-chan bool, provider ports.EarthquakeProvider) {
+func StartIngestionWorker(interval time.Duration, stopChan <-chan bool, provider ports.EarthquakeProvider, repo ports.EarthquakeRepository) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
@@ -16,15 +16,20 @@ func StartIngestionWorker(interval time.Duration, stopChan <-chan bool, provider
 	for {
 		select {
 		case <-ticker.C:
-			// Llamamos al proveedor sin saber si es el USGS, otra API o un mock de testing
 			fmt.Println("Buscando nuevos sismos...")
 			response, err := provider.GetEarthquakes()
 			if err != nil {
 				fmt.Printf("Error obteniendo datos: %v\n", err)
 				continue
 			}
+			
+			for _, eq := range response.Features {
+				err := repo.SaveEarthquake(eq)
+				if err != nil {
+					fmt.Printf("Error guardando sismo %s: %v\n", eq.ID, err)
+				}
+			}
 			fmt.Printf("Se procesaron %d sismos exitosamente.\n", len(response.Features))
-			// TODO: Guardar response.Features en Base de Datos
 
 		case <-stopChan:
 			fmt.Println("Deteniendo el motor de ingesta...")
