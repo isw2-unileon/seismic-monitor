@@ -49,14 +49,6 @@ export const apiService = {
     }
   },
 
-<<<<<<< HEAD
-  async login(credentials) {
-    await simulateNetworkLatency();
-    if (!credentials.email || !credentials.password) {
-      throw new Error("Missing email or password");
-    }
-    return authMock;
-=======
   /**
    * Simula el inicio de sesión de un usuario o conecta con el backend.
    * @param {Object} credentials - { email, password }
@@ -101,6 +93,5 @@ export const apiService = {
     }
 
     return await response.json();
->>>>>>> b1ac3b915bac750d7595dcce04e4d70208896d44
   }
 };
