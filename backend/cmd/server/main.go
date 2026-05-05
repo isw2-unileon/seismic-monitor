@@ -17,7 +17,9 @@ import (
 	"seismic-monitor/backend/internal/services"
 	"seismic-monitor/backend/internal/api/handlers"
 	"seismic-monitor/backend/internal/api/middleware"
-	"seismic-monitor/backend/internal/adapters/usgs"
+	"seismic-monitor/backend/internal/ports/providers"
+	"seismic-monitor/backend/internal/ports/spatial"
+	"seismic-monitor/backend/internal/models"
 
 	"github.com/gin-gonic/gin"
 )
@@ -97,7 +99,25 @@ func main() {
 	usgsURL := "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson"
 	provider := &usgs.USGSAdapter{URL: usgsURL}
 
-	go ingest.StartIngestionWorker(60*time.Second, stopWorker, provider, earthquakeRepo)
+	type DummySpatial struct{}
+	func (d *DummySpatial) GetAffectedUsers(s models.Feature) ([]models.User, error) {
+		return []models.User{}, nil // No devuelve afectados por ahora
+	}
+
+	// Emails
+	
+	// 1. Creamos la "Cola" en memoria (buffer de 100 mensajes)
+	alertQueue := make(chan models.AlertMessage, 100)
+
+	// 2. Instanciamos nuestro Adaptador de Emails (Mock)
+	emailAdapter := &email.MockSender{}
+
+	// 3. Arrancamos el Worker de Notificaciones (Consumidor)
+	go services.StartNotificationWorker(alertQueue, emailAdapter)
+
+	// 4. Arrancamos el Worker de Ingesta (Productor), pasándole la cola
+	go ingest.StartIngestionWorker(60*time.Second, stopWorker, provider, &DummySpatial{}, alertQueue)
+
 
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 	defer stop()
