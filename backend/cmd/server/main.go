@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"seismic-monitor/backend/internal/adapters/email"
+	"seismic-monitor/backend/internal/adapters/usgs"
 	"seismic-monitor/backend/internal/api/handlers"
 	"seismic-monitor/backend/internal/api/middleware"
 	"seismic-monitor/backend/internal/auth"
@@ -18,8 +19,7 @@ import (
 	"seismic-monitor/backend/internal/database"
 	"seismic-monitor/backend/internal/ingest"
 	"seismic-monitor/backend/internal/models"
-	"seismic-monitor/backend/internal/ports/providers"
-	"seismic-monitor/backend/internal/ports/spatial"
+	"seismic-monitor/backend/internal/ports"
 	"seismic-monitor/backend/internal/services"
 
 	"github.com/gin-gonic/gin"
@@ -104,8 +104,8 @@ func main() {
 	stopWorker := make(chan bool)
 
 	usgsURL := "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson"
-	provider := &providers.USGSAdapter{URL: usgsURL}
-	var spatialProvider spatial.Spatial = &DummySpatial{}
+	provider := &usgs.USGSAdapter{URL: usgsURL}
+	var spatialProvider ports.SpatialRepository = &DummySpatial{}
 
 	// Emails
 
