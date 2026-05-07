@@ -19,7 +19,7 @@ func TestUnmarshalUSGS(t *testing.T) {
 		}
 	}`)
 
-	var s Earthquake
+	var s Feature
 	err := json.Unmarshal(jsonRaw, &s)
 
 	if err != nil {

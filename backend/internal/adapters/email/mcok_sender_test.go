@@ -12,7 +12,7 @@ func TestMockSender_SendAlert(t *testing.T) {
 	sender := &MockSender{}
 
 	// 2. Preparamos datos falsos
-	user := models.User{ID: 1, Email: "usuario_test@ejemplo.com"}
+	user := models.User{ID: "1", Email: "usuario_test@ejemplo.com"}
 	sismo := models.Feature{ID: "sismo_test_123"}
 
 	// 3. Medimos el tiempo para asegurarnos de que simula el retraso (opcional pero buena práctica)

@@ -28,9 +28,9 @@ func (m *MockSpatialRepository) GetAffectedUsers(sismo models.Feature) ([]models
 	m.Called = true
 	// Simulamos que el sismo afectó a 3 usuarios
 	return []models.User{
-		{ID: 1, Email: "usuarioA@test.com"},
-		{ID: 2, Email: "usuarioB@test.com"},
-		{ID: 3, Email: "usuarioC@test.com"},
+		{ID: "1", Email: "usuarioA@test.com"},
+		{ID: "2", Email: "usuarioB@test.com"},
+		{ID: "3", Email: "usuarioC@test.com"},
 	}, nil
 }
 

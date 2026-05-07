@@ -10,19 +10,26 @@ import (
 	"syscall"
 	"time"
 
+	"seismic-monitor/backend/internal/adapters/email"
+	"seismic-monitor/backend/internal/api/handlers"
+	"seismic-monitor/backend/internal/api/middleware"
 	"seismic-monitor/backend/internal/auth"
 	"seismic-monitor/backend/internal/config"
 	"seismic-monitor/backend/internal/database"
 	"seismic-monitor/backend/internal/ingest"
-	"seismic-monitor/backend/internal/services"
-	"seismic-monitor/backend/internal/api/handlers"
-	"seismic-monitor/backend/internal/api/middleware"
+	"seismic-monitor/backend/internal/models"
 	"seismic-monitor/backend/internal/ports/providers"
 	"seismic-monitor/backend/internal/ports/spatial"
-	"seismic-monitor/backend/internal/models"
+	"seismic-monitor/backend/internal/services"
 
 	"github.com/gin-gonic/gin"
 )
+
+type DummySpatial struct{}
+
+func (d *DummySpatial) GetAffectedUsers(s models.Feature) ([]models.User, error) {
+	return []models.User{}, nil
+}
 
 var logger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
@@ -97,15 +104,11 @@ func main() {
 	stopWorker := make(chan bool)
 
 	usgsURL := "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson"
-	provider := &usgs.USGSAdapter{URL: usgsURL}
-
-	type DummySpatial struct{}
-	func (d *DummySpatial) GetAffectedUsers(s models.Feature) ([]models.User, error) {
-		return []models.User{}, nil // No devuelve afectados por ahora
-	}
+	provider := &providers.USGSAdapter{URL: usgsURL}
+	var spatialProvider spatial.Spatial = &DummySpatial{}
 
 	// Emails
-	
+
 	// 1. Creamos la "Cola" en memoria (buffer de 100 mensajes)
 	alertQueue := make(chan models.AlertMessage, 100)
 
@@ -116,8 +119,7 @@ func main() {
 	go services.StartNotificationWorker(alertQueue, emailAdapter)
 
 	// 4. Arrancamos el Worker de Ingesta (Productor), pasándole la cola
-	go ingest.StartIngestionWorker(60*time.Second, stopWorker, provider, &DummySpatial{}, alertQueue)
-
+	go ingest.StartIngestionWorker(60*time.Second, stopWorker, provider, spatialProvider, alertQueue)
 
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -144,4 +146,3 @@ func main() {
 
 	logger.Info("server stopped")
 }
-

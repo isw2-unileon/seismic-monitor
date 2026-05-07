@@ -33,7 +33,7 @@ func TestStartNotificationWorker(t *testing.T) {
 	go StartNotificationWorker(alertQueue, spyNotifier)
 
 	// 3. Preparamos el mensaje de prueba
-	testUser := models.User{ID: 99, Email: "peligro@test.com"}
+	testUser := models.User{ID: "99", Email: "peligro@test.com"}
 	testSismo := models.Feature{ID: "earthquake_99"}
 
 	// 4. Mandamos el trabajo por la cola
@@ -55,6 +55,6 @@ func TestStartNotificationWorker(t *testing.T) {
 	}
 
 	if spyNotifier.LastSismo.ID != "earthquake_99" {
-		t.Errorf("El sismo reportado es incorrecto. Se obtuvo: %s", spyNotifier.LastSismo.ID)
+		t.Errorf("El sismo reportado es incorrecto. Se obtuvo: %v", spyNotifier.LastSismo.ID)
 	}
 }
