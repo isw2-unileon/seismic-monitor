@@ -1,24 +1,33 @@
 // src/services/api.js
 
-// Importación estática de los contratos JSON
-import earthquakesMock from './mocks/earthquakes.json';
-
-const simulateNetworkLatency = (ms = 800) => new Promise(resolve => setTimeout(resolve, ms));
 const API_BASE_URL = '/api/v1';
 
 /**
- * Helper to transform static mock data into dynamic data with recent timestamps.
+ * Generates the USGS API URL for earthquakes in the last hour with magnitude >= 2.
  */
-const prepareMockData = (data) => {
-  const now = new Date();
+const getUSGSUrl = () => {
+  const lastHour = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  return `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&minmagnitude=1&orderby=time&starttime=${lastHour}`;
+};
+
+/**
+ * Maps USGS GeoJSON data to the format expected by the frontend.
+ */
+const mapUSGSData = (data) => {
+  if (!data || !data.features) return { type: 'FeatureCollection', features: [] };
+  
   return {
     ...data,
-    features: data.features.map((feature, index) => ({
+    features: data.features.map(feature => ({
       ...feature,
       properties: {
         ...feature.properties,
-        // Generates times: 5m ago, 15m ago, 25m ago...
-        time: new Date(now.getTime() - (index * 10 + 5) * 60 * 1000).toISOString()
+        // Map USGS 'mag' to 'magnitude' expected by the frontend
+        magnitude: feature.properties.mag,
+        // Ensure time is in a format the frontend can handle (USGS returns ms)
+        time: feature.properties.time,
+        // Map top-level id to properties.id for component compatibility
+        id: feature.id || feature.properties.code
       }
     }))
   };
@@ -27,25 +36,25 @@ const prepareMockData = (data) => {
 export const apiService = {
   async getEarthquakes() {
     try {
-      const response = await fetch(`${API_BASE_URL}/earthquakes`);
-      if (!response.ok) throw new Error('Network response was not ok');
-      return await response.json();
+      const response = await fetch(getUSGSUrl());
+      if (!response.ok) throw new Error('USGS API response was not ok');
+      const data = await response.json();
+      return mapUSGSData(data);
     } catch (error) {
-      console.warn("Using dynamic mock data due to API failure");
-      await simulateNetworkLatency();
-      return prepareMockData(earthquakesMock);
+      console.error("Error fetching earthquakes from USGS:", error);
+      return { type: 'FeatureCollection', features: [] };
     }
   },
 
   async getEarthquakesHistory() {
     try {
-      const response = await fetch(`${API_BASE_URL}/earthquakes/history`);
-      if (!response.ok) throw new Error('Network response was not ok');
-      return await response.json();
+      const response = await fetch(getUSGSUrl());
+      if (!response.ok) throw new Error('USGS API response was not ok');
+      const data = await response.json();
+      return mapUSGSData(data);
     } catch (error) {
-      console.warn("Using dynamic mock data for history due to API failure");
-      await simulateNetworkLatency();
-      return prepareMockData(earthquakesMock);
+      console.error("Error fetching earthquake history from USGS:", error);
+      return { type: 'FeatureCollection', features: [] };
     }
   },
 
