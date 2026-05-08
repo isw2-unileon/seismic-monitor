@@ -16,7 +16,7 @@ func NewEarthquakeRepository(db *sql.DB) *EarthquakeRepository {
 }
 
 // GetFilteredEarthquakes obtiene sismos filtrados por magnitud mínima y límite
-func (r *EarthquakeRepository) GetFilteredEarthquakes(minMag float64, limit int) ([]models.Earthquake, error) {
+func (r *EarthquakeRepository) GetFilteredEarthquakes(minMag float64, limit int) ([]models.Feature, error) {
 	query := `
 		SELECT usgs_id, richter_scale, place_name, ocurred_at, ST_X(location::geometry), ST_Y(location::geometry), depth_km 
 		FROM earthquake 
@@ -30,9 +30,9 @@ func (r *EarthquakeRepository) GetFilteredEarthquakes(minMag float64, limit int)
 	}
 	defer rows.Close()
 
-	var earthquakes []models.Earthquake
+	var earthquakes []models.Feature
 	for rows.Next() {
-		var eq models.Earthquake
+		var eq models.Feature
 		var lon, lat, depth float64
 		err := rows.Scan(&eq.ID, &eq.Info.Mag, &eq.Info.Place, &eq.Info.Time, &lon, &lat, &depth)
 		if err != nil {
@@ -46,7 +46,7 @@ func (r *EarthquakeRepository) GetFilteredEarthquakes(minMag float64, limit int)
 }
 
 // SaveEarthquake inserta o actualiza un sismo (Upsert)
-func (r *EarthquakeRepository) SaveEarthquake(eq models.Earthquake) error {
+func (r *EarthquakeRepository) SaveEarthquake(eq models.Feature) error {
 	query := `
 		INSERT INTO earthquake (usgs_id, richter_scale, place_name, ocurred_at, location, depth_km)
 		VALUES ($1, $2, $3, $4, ST_SetSRID(ST_MakePoint($5, $6), 4326), $7)
@@ -60,7 +60,7 @@ func (r *EarthquakeRepository) SaveEarthquake(eq models.Earthquake) error {
 	lon := eq.Geometry.Coordinates[0]
 	lat := eq.Geometry.Coordinates[1]
 	depth := eq.Geometry.Coordinates[2]
-	
+
 	// Convert Unix ms to time.Time
 	t := time.Unix(0, eq.Info.Time*int64(time.Millisecond))
 
@@ -68,7 +68,7 @@ func (r *EarthquakeRepository) SaveEarthquake(eq models.Earthquake) error {
 	return err
 }
 
-func (r *EarthquakeRepository) GetEarthquakesSince(since time.Time) ([]models.Earthquake, error) {
+func (r *EarthquakeRepository) GetEarthquakesSince(since time.Time) ([]models.Feature, error) {
 	query := `
 		SELECT usgs_id, richter_scale, place_name, ocurred_at, ST_X(location::geometry), ST_Y(location::geometry), depth_km
 		FROM earthquake
@@ -81,9 +81,9 @@ func (r *EarthquakeRepository) GetEarthquakesSince(since time.Time) ([]models.Ea
 	}
 	defer rows.Close()
 
-	var earthquakes []models.Earthquake
+	var earthquakes []models.Feature
 	for rows.Next() {
-		var eq models.Earthquake
+		var eq models.Feature
 		var lon, lat, depth float64
 		err := rows.Scan(&eq.ID, &eq.Info.Mag, &eq.Info.Place, &eq.Info.Time, &lon, &lat, &depth)
 		if err != nil {

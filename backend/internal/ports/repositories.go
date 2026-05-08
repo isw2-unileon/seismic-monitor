@@ -6,7 +6,7 @@ import (
 )
 
 type EarthquakeRepository interface {
-	GetEarthquakesSince(since time.Time) ([]models.Earthquake, error)
-	GetFilteredEarthquakes(minMag float64, limit int) ([]models.Earthquake, error)
-	SaveEarthquake(eq models.Earthquake) error
+	GetEarthquakesSince(since time.Time) ([]models.Feature, error)
+	GetFilteredEarthquakes(minMag float64, limit int) ([]models.Feature, error)
+	SaveEarthquake(eq models.Feature) error
 }

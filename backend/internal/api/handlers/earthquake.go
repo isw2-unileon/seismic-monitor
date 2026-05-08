@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"seismic-monitor/backend/internal/services"
 	"seismic-monitor/backend/internal/models"
+	"seismic-monitor/backend/internal/services"
 
 	"github.com/gin-gonic/gin"
 )
@@ -33,7 +33,7 @@ func (h *EarthquakeHandler) GetEarthquakes(c *gin.Context) {
 	}
 
 	// Delegar al repositorio a través de un servicio si existiera la necesidad,
-	// por ahora podemos asumir que el servicio también tiene este método 
+	// por ahora podemos asumir que el servicio también tiene este método
 	// o podemos crearlo. Para mantener la interfaz original, idealmente
 	// el servicio debería exponer GetFilteredEarthquakes.
 	// Asumiremos que el Service fue actualizado para delegar o se usaba Repo antes.
@@ -43,18 +43,19 @@ func (h *EarthquakeHandler) GetEarthquakes(c *gin.Context) {
 		return
 	}
 
-	// Asegurar que cada sismo tiene el tipo "Feature"
+	features := make([]models.Feature, len(earthquakes))
 	for i := range earthquakes {
 		earthquakes[i].Type = "Feature"
+		features[i] = earthquakes[i]
 	}
 
-	response := models.FeatureCollection{
+	response := models.USGSResponse{
 		Type:     "FeatureCollection",
-		Features: earthquakes,
+		Features: features,
 	}
 
 	if response.Features == nil {
-		response.Features = []models.Earthquake{} // Evitar null en JSON
+		response.Features = []models.Feature{} // Evitar null en JSON
 	}
 
 	c.JSON(http.StatusOK, response)
@@ -68,20 +69,20 @@ func (h *EarthquakeHandler) GetHistory(c *gin.Context) {
 		return
 	}
 
-	// Asegurar que cada sismo tiene el tipo "Feature"
+	features := make([]models.Feature, len(earthquakes))
 	for i := range earthquakes {
 		earthquakes[i].Type = "Feature"
+		features[i] = earthquakes[i]
 	}
 
-	response := models.FeatureCollection{
+	response := models.USGSResponse{
 		Type:     "FeatureCollection",
-		Features: earthquakes,
+		Features: features,
 	}
 
 	if response.Features == nil {
-		response.Features = []models.Earthquake{} // Evitar null en JSON
+		response.Features = []models.Feature{} // Evitar null en JSON
 	}
 
 	c.JSON(http.StatusOK, response)
 }
-

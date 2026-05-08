@@ -4,7 +4,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/isw2-unileon/proyect-scaffolding/backend/internal/models"
+	"seismic-monitor/backend/internal/models"
 )
 
 // MockSender es un adaptador que simula el envío de correos
