@@ -28,6 +28,12 @@ import (
 type DummySpatial struct{}
 
 func (d *DummySpatial) GetAffectedUsers(s models.Feature) ([]models.User, error) {
+	// ¡Magia para probar! Si la magnitud es mayor a 2.0, simulamos peligro
+	if s.Info.Mag > 2.0 {
+		return []models.User{
+			{ID: "1", Email: "admin@seismicmonitor.com"},
+		}, nil
+	}
 	return []models.User{}, nil
 }
 
@@ -112,14 +118,28 @@ func main() {
 	// 1. Creamos la "Cola" en memoria (buffer de 100 mensajes)
 	alertQueue := make(chan models.AlertMessage, 100)
 
-	// 2. Instanciamos nuestro Adaptador de Emails (Mock)
-	emailAdapter := &email.MockSender{}
+	// 2. Instanciamos nuestro Adaptador de Emails
+	emailAdapter := &email.SMTPSender{
+		Host:     "sandbox.smtp.mailtrap.io",
+		Port:     "2525",
+		Username: "TU_USERNAME_DE_MAILTRAP",
+		Password: "TU_PASSWORD_DE_MAILTRAP",
+	}
 
 	// 3. Arrancamos el Worker de Notificaciones (Consumidor)
 	go services.StartNotificationWorker(alertQueue, emailAdapter)
 
-	// 4. Arrancamos el Worker de Ingesta (Productor), pasándole la cola
-	go ingest.StartIngestionWorker(60*time.Second, stopWorker, provider, spatialProvider, alertQueue)
+	// 4. Instanciamos el Worker de Ingesta
+	ingestionWorker := ingest.NewIngestionWorker(
+		60*time.Second,
+		provider,
+		spatialProvider,
+		earthquakeRepo,
+		alertQueue,
+	)
+
+	// Arrancamos el worker en una goroutine
+	go ingestionWorker.Start(stopWorker)
 
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 	defer stop()

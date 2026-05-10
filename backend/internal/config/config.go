@@ -1,33 +1,31 @@
-// Package config handles application configuration from environment variables.
 package config
 
-import "os"
+import (
+	"os"
+)
 
-// Config holds the application configuration loaded from environment variables.
+// Config almacena toda la configuración de la aplicación
 type Config struct {
-	Port            string
-	GinMode         string
-	CORSAllowOrigin string
-	DatabaseURL     string // NUEVO: URL de conexión a PostgreSQL
-	JWTSecret       string // Clave para firmar tokens
+	DatabaseURL string
+	Port        string
+	GinMode     string
+	JWTSecret   string
 }
 
-// Load reads configuration from environment variables with sensible defaults.
+// Load lee las variables de entorno o usa valores por defecto
 func Load() *Config {
 	return &Config{
-		Port:            getEnv("PORT", "8081"),
-		GinMode:         getEnv("GIN_MODE", "debug"),
-		CORSAllowOrigin: getEnv("CORS_ALLOW_ORIGIN", "*"),
-		// Añadimos la lectura de la URL de base de datos.
-		// El fallback asume la base local configurada en docker-compose.yaml
-		DatabaseURL: getEnv("DATABASE_URL", "postgres://db:AVNS_BHXOWlutew_acMTYe28@localhost:5432/db?sslmode=disable"),
-		JWTSecret:   getEnv("JWT_SECRET", "super-secret-key-change-me"),
+		DatabaseURL: getEnv("DATABASE_URL", "postgres://db:db@localhost:5432/db?sslmode=disable"),
+		Port:        getEnv("PORT", "8081"),
+		GinMode:     getEnv("GIN_MODE", "debug"), // Por defecto en modo debug para desarrollo local
+		JWTSecret:   getEnv("JWT_SECRET", "tu_secreto_super_seguro_por_defecto"),
 	}
 }
 
+// Función auxiliar para leer variables con un valor por defecto
 func getEnv(key, fallback string) string {
-	if v := os.Getenv(key); v != "" {
-		return v
+	if value, exists := os.LookupEnv(key); exists {
+		return value
 	}
 	return fallback
 }
