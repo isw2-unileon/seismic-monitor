@@ -44,6 +44,8 @@ func main() {
 
 	cfg := config.Load()
 
+	logger.Info("Intentando conectar a la BD...", "url", cfg.DatabaseURL)
+
 	// 1. Inicializar la conexión a la base de datos
 	db, err := database.Connect(cfg.DatabaseURL)
 	if err != nil {

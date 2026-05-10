@@ -1,10 +1,12 @@
 package config
 
 import (
+	"log"
 	"os"
+
+	"github.com/joho/godotenv" // Necesario para leer el archivo .env
 )
 
-// Config almacena toda la configuración de la aplicación
 type Config struct {
 	DatabaseURL string
 	Port        string
@@ -12,12 +14,19 @@ type Config struct {
 	JWTSecret   string
 }
 
-// Load lee las variables de entorno o usa valores por defecto
 func Load() *Config {
+	// ¡ESTA ES LA LÍNEA MÁGICA QUE FALTA!
+	// godotenv.Load() busca el archivo .env y lo carga en las variables del sistema
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("Aviso: No se encontró archivo .env, leyendo variables del sistema...")
+	}
+
 	return &Config{
+		// Ahora getEnv sí encontrará la variable cargada del .env
 		DatabaseURL: getEnv("DATABASE_URL", "postgres://db:db@localhost:5432/db?sslmode=disable"),
 		Port:        getEnv("PORT", "8081"),
-		GinMode:     getEnv("GIN_MODE", "debug"), // Por defecto en modo debug para desarrollo local
+		GinMode:     getEnv("GIN_MODE", "debug"),
 		JWTSecret:   getEnv("JWT_SECRET", "tu_secreto_super_seguro_por_defecto"),
 	}
 }
