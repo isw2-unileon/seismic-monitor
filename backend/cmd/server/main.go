@@ -119,12 +119,15 @@ func main() {
 	alertQueue := make(chan models.AlertMessage, 100)
 
 	// 2. Instanciamos nuestro Adaptador de Emails
-	emailAdapter := &email.SMTPSender{
-		Host:     "sandbox.smtp.mailtrap.io",
-		Port:     "2525",
-		Username: "TU_USERNAME_DE_MAILTRAP",
-		Password: "TU_PASSWORD_DE_MAILTRAP",
-	}
+	/*
+		emailAdapter := &email.SMTPSender{
+			Host:     "sandbox.smtp.mailtrap.io",
+			Port:     "2525",
+			Username: "TU_USERNAME_DE_MAILTRAP",
+			Password: "TU_PASSWORD_DE_MAILTRAP",
+		}
+	*/
+	emailAdapter := &email.MockSender{}
 
 	// 3. Arrancamos el Worker de Notificaciones (Consumidor)
 	go services.StartNotificationWorker(alertQueue, emailAdapter)
