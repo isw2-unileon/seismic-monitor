@@ -34,16 +34,35 @@ func (m *MockSpatialRepository) GetAffectedUsers(sismo models.Feature) ([]models
 	}, nil
 }
 
+// --- MOCK DE BASE DE DATOS ---
+type MockEarthquakeRepository struct {
+	Called bool
+}
+
+func (m *MockEarthquakeRepository) GetEarthquakesSince(since time.Time) ([]models.Feature, error) {
+	return nil, nil
+}
+
+func (m *MockEarthquakeRepository) GetFilteredEarthquakes(minMag float64, limit int) ([]models.Feature, error) {
+	return nil, nil
+}
+
+func (m *MockEarthquakeRepository) SaveEarthquake(eq models.Feature) error {
+	m.Called = true
+	return nil
+}
+
 // --- EL TEST ---
 func TestStartIngestionWorker_CollisionDetection(t *testing.T) {
 	stopChan := make(chan bool)
 
 	providerMock := &MockEarthquakeProvider2{}
 	spatialMock := &MockSpatialRepository{}
+	dbMock := &MockEarthquakeRepository{}
 	alertQueue := make(chan models.AlertMessage, 100)
 
 	// Arrancamos el worker con nuestros mocks
-	go StartIngestionWorker(50*time.Millisecond, stopChan, providerMock, spatialMock, alertQueue)
+	go StartIngestionWorker(50*time.Millisecond, stopChan, providerMock, spatialMock, dbMock, alertQueue)
 
 	// Damos tiempo a que se ejecute al menos un tick
 	time.Sleep(100 * time.Millisecond)

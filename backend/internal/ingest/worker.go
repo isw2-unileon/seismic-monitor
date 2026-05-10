@@ -12,6 +12,7 @@ func StartIngestionWorker(
 	stopChan <-chan bool,
 	provider ports.EarthquakeProvider,
 	spatialRepo ports.SpatialRepository,
+	dbRepo ports.EarthquakeRepository,
 	alertQueue chan<- models.AlertMessage, // NUEVO: Canal de salida para las alertas
 ) {
 	ticker := time.NewTicker(interval)
@@ -24,6 +25,12 @@ func StartIngestionWorker(
 		case <-ticker.C:
 			response, _ := provider.GetEarthquakes()
 			for _, sismo := range response.Features {
+				// Guardar sismo en base de datos
+				err := dbRepo.SaveEarthquake(sismo)
+				if err != nil {
+					log.Printf("[Worker] Error al guardar sismo %s: %v\n", sismo.ID, err)
+				}
+
 				affectedUsers, _ := spatialRepo.GetAffectedUsers(sismo)
 
 				// En lugar de hacer print, mandamos el trabajo a la cola (canal)

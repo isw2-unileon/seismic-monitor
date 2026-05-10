@@ -119,7 +119,7 @@ func main() {
 	go services.StartNotificationWorker(alertQueue, emailAdapter)
 
 	// 4. Arrancamos el Worker de Ingesta (Productor), pasándole la cola
-	go ingest.StartIngestionWorker(60*time.Second, stopWorker, provider, spatialProvider, alertQueue)
+	go ingest.StartIngestionWorker(60*time.Second, stopWorker, provider, spatialProvider, earthquakeRepo, alertQueue)
 
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 	defer stop()
