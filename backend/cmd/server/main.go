@@ -25,18 +25,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type DummySpatial struct{}
-
-func (d *DummySpatial) GetAffectedUsers(s models.Feature) ([]models.User, error) {
-	return []models.User{}, nil
-}
-
 var logger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
 func main() {
 	ctx := context.Background()
 
 	cfg := config.Load()
+
+	logger.Info("Intentando conectar a la BD...", "url", cfg.DatabaseURL)
 
 	// 1. Inicializar la conexión a la base de datos
 	db, err := database.Connect(cfg.DatabaseURL)
@@ -105,21 +101,35 @@ func main() {
 
 	usgsURL := "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson"
 	provider := &usgs.USGSAdapter{URL: usgsURL}
-	var spatialProvider ports.SpatialRepository = &DummySpatial{}
+	var spatialProvider ports.SpatialRepository = userRepo
 
 	// Emails
 
 	// 1. Creamos la "Cola" en memoria (buffer de 100 mensajes)
 	alertQueue := make(chan models.AlertMessage, 100)
 
-	// 2. Instanciamos nuestro Adaptador de Emails (Mock)
-	emailAdapter := &email.MockSender{}
+	// 2. Instanciamos nuestro Adaptador de Emails
+	emailAdapter := &email.SMTPSender{
+		Host:     os.Getenv("SMTP_HOST"),
+		Port:     os.Getenv("SMTP_PORT"),
+		Username: os.Getenv("SMTP_USER"),
+		Password: os.Getenv("SMTP_PASS"),
+	}
 
 	// 3. Arrancamos el Worker de Notificaciones (Consumidor)
 	go services.StartNotificationWorker(alertQueue, emailAdapter)
 
-	// 4. Arrancamos el Worker de Ingesta (Productor), pasándole la cola
-	go ingest.StartIngestionWorker(60*time.Second, stopWorker, provider, spatialProvider, earthquakeRepo, alertQueue)
+	// 4. Instanciamos el Worker de Ingesta
+	ingestionWorker := ingest.NewIngestionWorker(
+		60*time.Second,
+		provider,
+		spatialProvider,
+		earthquakeRepo,
+		alertQueue,
+	)
+
+	// Arrancamos el worker en una goroutine
+	go ingestionWorker.Start(stopWorker)
 
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 	defer stop()
