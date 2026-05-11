@@ -23,7 +23,7 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 // CreateUser inserta un nuevo usuario en la base de datos
 func (r *UserRepository) CreateUser(user *models.User) error {
 	query := `INSERT INTO users (username, email, password_hash, location, alert_radius_km, created_at) VALUES ($1, $2, $3, ST_SetSRID(ST_MakePoint($4, $5), 4326), $6, $7) RETURNING id`
-	
+
 	user.CreatedAt = time.Now()
 	username := user.Email // Usar el email como username ya que username es requerido
 
@@ -68,4 +68,40 @@ func HashPassword(password string) (string, error) {
 func CheckPasswordHash(password, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return err == nil
+}
+
+// GetAffectedUsers implementa la interfaz SpatialRepository usando PostGIS.
+// Busca usuarios cuyo radio de alerta cubra la ubicación del sismo.
+func (r *UserRepository) GetAffectedUsers(sismo models.Feature) ([]models.User, error) {
+	// Query que usa ST_DWithin para calcular si el sismo está dentro del radio del usuario.
+	// ST_DWithin usa metros con 'geography', así que multiplicamos km * 1000.
+	query := `
+		SELECT id, email, alert_radius_km
+		FROM users
+		WHERE ST_DWithin(
+			location::geography, 
+			ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography, 
+			alert_radius_km * 1000
+		)`
+
+	lon := sismo.Geometry.Coordinates[0]
+	lat := sismo.Geometry.Coordinates[1]
+
+	rows, err := r.DB.Query(query, lon, lat)
+	if err != nil {
+		return nil, fmt.Errorf("error buscando usuarios afectados: %w", err)
+	}
+	defer rows.Close()
+
+	var users []models.User
+	for rows.Next() {
+		var u models.User
+		// Nota: solo escaneamos los campos que devuelve la query (id, email, radius)
+		if err := rows.Scan(&u.ID, &u.Email, &u.AlertRadius); err != nil {
+			return nil, err
+		}
+		users = append(users, u)
+	}
+
+	return users, nil
 }

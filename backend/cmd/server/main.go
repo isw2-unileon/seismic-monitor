@@ -25,18 +25,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type DummySpatial struct{}
-
-func (d *DummySpatial) GetAffectedUsers(s models.Feature) ([]models.User, error) {
-	// ¡Magia para probar! Si la magnitud es mayor a 2.0, simulamos peligro
-	if s.Info.Mag > 2.0 {
-		return []models.User{
-			{ID: "1", Email: "admin@seismicmonitor.com"},
-		}, nil
-	}
-	return []models.User{}, nil
-}
-
 var logger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
 func main() {
@@ -113,7 +101,7 @@ func main() {
 
 	usgsURL := "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson"
 	provider := &usgs.USGSAdapter{URL: usgsURL}
-	var spatialProvider ports.SpatialRepository = &DummySpatial{}
+	var spatialProvider ports.SpatialRepository = userRepo
 
 	// Emails
 
@@ -121,15 +109,12 @@ func main() {
 	alertQueue := make(chan models.AlertMessage, 100)
 
 	// 2. Instanciamos nuestro Adaptador de Emails
-	/*
-		emailAdapter := &email.SMTPSender{
-			Host:     "sandbox.smtp.mailtrap.io",
-			Port:     "2525",
-			Username: "TU_USERNAME_DE_MAILTRAP",
-			Password: "TU_PASSWORD_DE_MAILTRAP",
-		}
-	*/
-	emailAdapter := &email.MockSender{}
+	emailAdapter := &email.SMTPSender{
+		Host:     os.Getenv("SMTP_HOST"),
+		Port:     os.Getenv("SMTP_PORT"),
+		Username: os.Getenv("SMTP_USER"),
+		Password: os.Getenv("SMTP_PASS"),
+	}
 
 	// 3. Arrancamos el Worker de Notificaciones (Consumidor)
 	go services.StartNotificationWorker(alertQueue, emailAdapter)
