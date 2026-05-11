@@ -31,7 +31,7 @@ const formatTime = (isoString) => {
 
 <template>
   <div class="view-container">
-    <h1>Seismic History (Last Hour)</h1>
+    <h1>Seismic History (Last Hour, with a Magnitude over 1.0)</h1>
     
     <div v-if="loading" class="loading">
       Loading recent earthquakes...
@@ -42,7 +42,7 @@ const formatTime = (isoString) => {
     </div>
     
     <div v-else-if="earthquakes.length === 0" class="no-data">
-      No earthquakes recorded in the last hour.
+      No earthquakes recorded with magnitude 1.0 or higher in the last hour.
     </div>
     
     <div v-else class="earthquake-list">
