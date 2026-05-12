@@ -3,11 +3,11 @@
 const API_BASE_URL = '/api/v1';
 
 /**
- * Generates the USGS API URL for earthquakes in the last hour with magnitude >= 2.
+ * Generates the USGS API URL for earthquakes with custom filters.
  */
-const getUSGSUrl = () => {
-  const lastHour = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-  return `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&minmagnitude=1&orderby=time&starttime=${lastHour}`;
+const getUSGSUrl = (minMagnitude = 1, hours = 1) => {
+  const startTime = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
+  return `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&minmagnitude=${minMagnitude}&orderby=time&starttime=${startTime}`;
 };
 
 /**
@@ -46,9 +46,9 @@ export const apiService = {
     }
   },
 
-  async getEarthquakesHistory() {
+  async getEarthquakesHistory(minMagnitude = 1, hours = 1) {
     try {
-      const response = await fetch(getUSGSUrl());
+      const response = await fetch(getUSGSUrl(minMagnitude, hours));
       if (!response.ok) throw new Error('USGS API response was not ok');
       const data = await response.json();
       return mapUSGSData(data);
