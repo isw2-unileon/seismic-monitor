@@ -43,6 +43,9 @@ func main() {
 	defer db.Close()
 	logger.Info("Conexión a PostgreSQL establecida con éxito")
 
+	// 1. Creamos la "Cola" en memoria (buffer de 100 mensajes)
+	alertQueue := make(chan models.AlertMessage, 100)
+
 	// 2. Inicializar repositorios y servicios
 	userRepo := database.NewUserRepository(db)
 	earthquakeRepo := database.NewEarthquakeRepository(db)
@@ -54,7 +57,12 @@ func main() {
 	authHandler := handlers.NewAuthHandler(userRepo, jwtService)
 	userHandler := handlers.NewUserHandler(userRepo)
 	earthquakeHandler := handlers.NewEarthquakeHandler(earthquakeService)
-	reportHandler := &handlers.ReportHandler{Repo: reportRepo}
+
+	reportHandler := &handlers.ReportHandler{
+		Repo:       reportRepo,
+		UserRepo:   userRepo,
+		AlertQueue: alertQueue, // La misma cola que usa el worker de Mailtrap
+	}
 
 	gin.SetMode(cfg.GinMode)
 
@@ -109,9 +117,6 @@ func main() {
 	var spatialProvider ports.SpatialRepository = userRepo
 
 	// Emails
-
-	// 1. Creamos la "Cola" en memoria (buffer de 100 mensajes)
-	alertQueue := make(chan models.AlertMessage, 100)
 
 	// 2. Instanciamos nuestro Adaptador de Emails
 	emailAdapter := &email.SMTPSender{

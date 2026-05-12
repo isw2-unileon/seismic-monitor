@@ -29,7 +29,7 @@ func (r *ReportRepository) RegisterReport(report models.UserReport) (int, error)
 		SELECT COUNT(*) 
 		FROM reported_earthquakes 
 		WHERE ST_DWithin(location, ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography, 30000)
-		  AND reported_at > NOW() - INTERVAL '10 minutes'`
+		  AND reported_at > NOW() - INTERVAL '2 minutes'`
 
 	var count int
 	err = r.DB.QueryRow(countQuery, report.Longitude, report.Latitude).Scan(&count)
