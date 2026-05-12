@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"seismic-monitor/backend/internal/models"
 )
@@ -30,7 +31,8 @@ func (a *USGSAdapter) GetEarthquakes() (models.USGSResponse, error) {
 }
 
 func (a *USGSAdapter) fetchData(url string) ([]byte, error) {
-	resp, err := http.Get(url)
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Get(url)
 	if err != nil {
 		return nil, err
 	}

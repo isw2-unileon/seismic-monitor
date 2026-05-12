@@ -35,7 +35,11 @@ func NewIngestionWorker(
 
 // NUEVO: Método privado que contiene la lógica que antes estaba en el select
 func (w *IngestionWorker) processEarthquakes() {
-	response, _ := w.provider.GetEarthquakes()
+	response, err := w.provider.GetEarthquakes()
+	if err != nil {
+		log.Printf("[Worker] Error fetching earthquakes: %v", err)
+		return
+	}
 
 	nuevosGuardados := 0 // Contador para saber cuántos metemos en esta pasada
 
@@ -60,9 +64,13 @@ func (w *IngestionWorker) processEarthquakes() {
 		// 4. Buscamos usuarios y lanzamos alertas
 		affectedUsers, _ := w.spatialRepo.GetAffectedUsers(sismo)
 		for _, user := range affectedUsers {
-			w.alertQueue <- models.AlertMessage{
+			select {
+			case w.alertQueue <- models.AlertMessage{
 				User:  user,
 				Sismo: sismo,
+			}:
+			default:
+				log.Printf("[Worker] Cola de alertas llena, omitiendo notificación para %s", user.Email)
 			}
 		}
 	}
