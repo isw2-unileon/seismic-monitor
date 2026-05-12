@@ -12,6 +12,7 @@ type User struct {
 	Latitude     float64   `json:"latitude"`
 	Longitude    float64   `json:"longitude"`
 	AlertRadius  float64   `json:"alert_radius"`
+	MinMagnitude float64   `json:"min_magnitude"`
 	CreatedAt    time.Time `json:"created_at"`
 }
 
@@ -29,7 +30,8 @@ type LoginRequest struct {
 
 // UpdateLocationRequest es el DTO para actualizar la ubicación del usuario
 type UpdateLocationRequest struct {
-	Latitude    float64 `json:"latitude" binding:"required,min=-90,max=90"`
-	Longitude   float64 `json:"longitude" binding:"required,min=-180,max=180"`
-	AlertRadius float64 `json:"alert_radius" binding:"required,min=1"` // Radio en kilómetros
+	Latitude     float64 `json:"latitude" binding:"required,min=-90,max=90"`
+	Longitude    float64 `json:"longitude" binding:"required,min=-180,max=180"`
+	AlertRadius  float64 `json:"alert_radius" binding:"required,min=1"` // Radio en kilómetros
+	MinMagnitude float64 `json:"min_magnitude" binding:"required,min=0,max=10"`
 }

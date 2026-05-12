@@ -14,7 +14,8 @@ const layersGroup = L.layerGroup()
 const tempLayer = L.layerGroup()
 
 let tempCircle = null
-const tempRadius = ref(100) 
+const tempRadius = ref(100)
+const tempMagnitude = ref(3.0)
 const pendingLocation = ref(null)
 
 const selectedMarkerId = ref(null) 
@@ -38,7 +39,8 @@ const loadUserCenters = () => {
   const data = JSON.parse(localStorage.getItem('user_data') || '{}')
   return {
     centers: data.alert_centers || [],
-    defaultRadius: data.alert_radius_km || 100
+    defaultRadius: data.alert_radius_km || 100,
+    defaultMagnitude: data.min_magnitude || 3.0
   }
 }
 
@@ -67,20 +69,33 @@ const renderAllCenters = () => {
   })
 }
 
-const confirmLocation = () => {
+const confirmLocation = async () => {
   if (!pendingLocation.value) return
   const { centers } = loadUserCenters()
   const newCenter = {
     id: Date.now(),
     lat: pendingLocation.value.lat,
     lng: pendingLocation.value.lng,
-    radius: tempRadius.value 
+    radius: tempRadius.value,
+    min_magnitude: tempMagnitude.value
   }
   const data = JSON.parse(localStorage.getItem('user_data') || '{}')
   data.alert_centers = [...centers, newCenter]
   data.alert_radius_km = tempRadius.value 
+  data.min_magnitude = tempMagnitude.value
   localStorage.setItem('user_data', JSON.stringify(data))
   
+  try {
+    await apiService.updateUserSettings({
+      latitude: newCenter.lat,
+      longitude: newCenter.lng,
+      alert_radius: newCenter.radius,
+      min_magnitude: newCenter.min_magnitude
+    })
+  } catch (error) {
+    console.error("Error sincronizando con el servidor:", error)
+  }
+
   cancelLocation() 
   renderAllCenters()
 }
@@ -94,8 +109,9 @@ const cancelLocation = () => {
 
 onMounted(() => {
   if (!mapContainer.value) return
-  const { centers, defaultRadius } = loadUserCenters()
+  const { centers, defaultRadius, defaultMagnitude } = loadUserCenters()
   tempRadius.value = defaultRadius
+  tempMagnitude.value = defaultMagnitude
 
   const earthBounds = L.latLngBounds([[-90, -180], [90, 180]])
 
@@ -172,6 +188,7 @@ onMounted(() => {
 
     const data = JSON.parse(localStorage.getItem('user_data') || '{}')
     tempRadius.value = data.alert_radius_km || 100
+    tempMagnitude.value = data.min_magnitude || 3.0
 
     tempCircle = L.circle(e.latlng, {
       radius: tempRadius.value * 1000,
@@ -187,14 +204,28 @@ onMounted(() => {
     const popupContent = `
       <div style="min-width: 190px; text-align: center; font-family: sans-serif;">
         <h4 style="margin: 0 0 10px 0; color: #1a1a2e;">Configurar Área</h4>
-        <div style="display: flex; justify-content: center; align-items: center; gap: 5px; margin-bottom: 10px;">
-          <span style="font-size: 14px; color: #333; font-weight: bold;">Radio:</span>
-          <input type="number" id="radius-input" min="1" max="5000" step="1" value="${tempRadius.value}" 
-                 style="width: 70px; padding: 4px; border: 1px solid #ccc; border-radius: 4px; text-align: center; font-size: 14px; color: #1a1a2e; outline: none;">
-          <span style="font-size: 14px; color: #333;">km</span>
+        
+        <div style="margin-bottom: 15px;">
+          <div style="display: flex; justify-content: center; align-items: center; gap: 5px; margin-bottom: 5px;">
+            <span style="font-size: 14px; color: #333; font-weight: bold;">Radio:</span>
+            <input type="number" id="radius-input" min="1" max="5000" step="1" value="${tempRadius.value}" 
+                   style="width: 70px; padding: 4px; border: 1px solid #ccc; border-radius: 4px; text-align: center; font-size: 14px; color: #1a1a2e; outline: none;">
+            <span style="font-size: 14px; color: #333;">km</span>
+          </div>
+          <input type="range" id="radius-slider" min="10" max="1000" step="10" value="${tempRadius.value}" 
+                 style="width: 100%; accent-color: #e94560; cursor: pointer;">
         </div>
-        <input type="range" id="radius-slider" min="10" max="1000" step="10" value="${tempRadius.value}" 
-               style="width: 100%; accent-color: #e94560; margin-bottom: 15px; cursor: pointer;">
+
+        <div style="margin-bottom: 15px;">
+          <div style="display: flex; justify-content: center; align-items: center; gap: 5px; margin-bottom: 5px;">
+            <span style="font-size: 14px; color: #333; font-weight: bold;">Magnitud:</span>
+            <input type="number" id="magnitude-input" min="0" max="10" step="0.1" value="${tempMagnitude.value}" 
+                   style="width: 70px; padding: 4px; border: 1px solid #ccc; border-radius: 4px; text-align: center; font-size: 14px; color: #1a1a2e; outline: none;">
+          </div>
+          <input type="range" id="magnitude-slider" min="0" max="10" step="0.1" value="${tempMagnitude.value}" 
+                 style="width: 100%; accent-color: #fbc531; cursor: pointer;">
+        </div>
+
         <div style="display: flex; gap: 8px;">
           <button id="save-btn" style="flex: 1; background: #28a745; color: white; border: none; padding: 6px; border-radius: 4px; cursor: pointer; font-weight: bold;">Guardar</button>
           <button id="cancel-btn" style="flex: 1; background: #dc3545; color: white; border: none; padding: 6px; border-radius: 4px; cursor: pointer; font-weight: bold;">✕</button>
@@ -205,8 +236,10 @@ onMounted(() => {
   })
 
   mapInstance.value.on('popupopen', () => {
-    const slider = document.getElementById('radius-slider')
-    const numberInput = document.getElementById('radius-input')
+    const radiusSlider = document.getElementById('radius-slider')
+    const radiusInput = document.getElementById('radius-input')
+    const magnitudeSlider = document.getElementById('magnitude-slider')
+    const magnitudeInput = document.getElementById('magnitude-input')
     const saveBtn = document.getElementById('save-btn')
     const cancelBtn = document.getElementById('cancel-btn')
 
@@ -215,12 +248,26 @@ onMounted(() => {
       if (isNaN(newRadius) || newRadius < 1) newRadius = 1 
       tempRadius.value = newRadius
       if (tempCircle) tempCircle.setRadius(newRadius * 1000)
-      if (slider && slider.value !== newRadius.toString()) slider.value = newRadius
-      if (numberInput && numberInput.value !== newRadius.toString()) numberInput.value = newRadius
+      if (radiusSlider && radiusSlider.value !== newRadius.toString()) radiusSlider.value = newRadius
+      if (radiusInput && radiusInput.value !== newRadius.toString()) radiusInput.value = newRadius
     }
 
-    if (slider) slider.addEventListener('input', (ev) => syncRadius(ev.target.value))
-    if (numberInput) numberInput.addEventListener('input', (ev) => syncRadius(ev.target.value))
+    const syncMagnitude = (value) => {
+      let newMag = parseFloat(value)
+      if (isNaN(newMag)) newMag = 3.0
+      if (newMag < 0) newMag = 0
+      if (newMag > 10) newMag = 10
+      tempMagnitude.value = newMag
+      if (magnitudeSlider && magnitudeSlider.value !== newMag.toString()) magnitudeSlider.value = newMag
+      if (magnitudeInput && magnitudeInput.value !== newMag.toString()) magnitudeInput.value = newMag
+    }
+
+    if (radiusSlider) radiusSlider.addEventListener('input', (ev) => syncRadius(ev.target.value))
+    if (radiusInput) radiusInput.addEventListener('input', (ev) => syncRadius(ev.target.value))
+    
+    if (magnitudeSlider) magnitudeSlider.addEventListener('input', (ev) => syncMagnitude(ev.target.value))
+    if (magnitudeInput) magnitudeInput.addEventListener('input', (ev) => syncMagnitude(ev.target.value))
+
     if (saveBtn) saveBtn.addEventListener('click', confirmLocation)
     if (cancelBtn) cancelBtn.addEventListener('click', cancelLocation)
   })

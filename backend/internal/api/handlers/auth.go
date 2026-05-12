@@ -49,6 +49,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		Email:        req.Email,
 		PasswordHash: hashed,
 		AlertRadius:  100, // Valor por defecto en km
+		MinMagnitude: 3.0, // Valor por defecto de magnitud
 	}
 
 	if err := h.Repo.CreateUser(user); err != nil {
@@ -89,8 +90,10 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"token": token,
 		"user": gin.H{
-			"email": user.Email,
-			"id":    user.ID,
+			"email":         user.Email,
+			"id":            user.ID,
+			"alert_radius":  user.AlertRadius,
+			"min_magnitude": user.MinMagnitude,
 		},
 	})
 }
