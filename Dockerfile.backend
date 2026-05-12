@@ -1,0 +1,29 @@
+FROM golang:alpine AS builder
+
+WORKDIR /app
+
+# Copiar los archivos que declaran las dependencias
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copiar el código fuente del backend
+COPY backend/ ./backend/
+
+# Compilar el ejecutable
+RUN go build -o /app/bin/server ./backend/cmd/server
+
+# Imagen final ligera
+FROM alpine:latest
+
+WORKDIR /app
+
+# Instalar dependencias del sistema necesarias (como certificados CA para llamadas HTTPS a USGS)
+RUN apk --no-cache add ca-certificates tzdata
+
+# Copiar el binario desde la fase de construcción
+COPY --from=builder /app/bin/server /app/server
+
+EXPOSE 8081
+
+# Ejecutar
+CMD ["/app/server"]
