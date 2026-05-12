@@ -46,8 +46,13 @@ jobs:
             docker stop seismic-backend-container || true
             docker rm seismic-backend-container || true
 
+            # Ejecutar las migraciones de la base de datos en la Managed Database (idempotentes)
+            echo "Ejecutando migraciones de base de datos..."
+            # Extraer la URL de la base de datos del archivo .env y ejecutar psql usando un contenedor temporal
+            DB_URL=$(grep '^DATABASE_URL=' /opt/seismic-monitor/.env | cut -d '=' -f2-)
+            docker run --rm -i postgis/postgis:15-3.3 psql "$DB_URL" < /opt/seismic-monitor/backend/migrations/000001_init_schema.up.sql || echo "Aviso: Fallo al ejecutar la migración."
+
             # Levantar el nuevo contenedor
-            # IMPORTANTE: Asegúrate de tener el archivo .env creado en el servidor
             # en la ruta /opt/seismic-monitor/.env con la DATABASE_URL, SMTP, etc.
             # Usamos add-host para que pueda conectar a la BD si corre en localhost del Droplet
             docker run -d \
