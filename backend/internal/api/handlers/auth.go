@@ -92,6 +92,8 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		"user": gin.H{
 			"email":         user.Email,
 			"id":            user.ID,
+			"latitude":      user.Latitude,
+			"longitude":     user.Longitude,
 			"alert_radius":  user.AlertRadius,
 			"min_magnitude": user.MinMagnitude,
 		},

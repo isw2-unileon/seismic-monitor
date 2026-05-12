@@ -37,9 +37,22 @@ const customMarkerIcon = L.icon({
 
 const loadUserCenters = () => {
   const data = JSON.parse(localStorage.getItem('user_data') || '{}')
+  let centers = data.alert_centers || []
+  
+  // Si no hay centros pero hay ubicación base, la reconstruimos como el primer centro
+  if (centers.length === 0 && data.latitude && data.longitude) {
+    centers = [{
+      id: 'base',
+      lat: data.latitude,
+      lng: data.longitude,
+      radius: data.alert_radius || data.alert_radius_km || 100,
+      min_magnitude: data.min_magnitude || 3.0
+    }]
+  }
+
   return {
-    centers: data.alert_centers || [],
-    defaultRadius: data.alert_radius_km || 100,
+    centers: centers,
+    defaultRadius: data.alert_radius || data.alert_radius_km || 100,
     defaultMagnitude: data.min_magnitude || 3.0
   }
 }
