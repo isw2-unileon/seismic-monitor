@@ -99,7 +99,7 @@ func main() {
 
 	stopWorker := make(chan bool)
 
-	usgsURL := "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson"
+	usgsURL := "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson"
 	provider := &usgs.USGSAdapter{URL: usgsURL}
 	var spatialProvider ports.SpatialRepository = userRepo
 
