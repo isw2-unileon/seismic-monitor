@@ -1,0 +1,62 @@
+name: Continuous Deployment (Backend)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+      - "go.mod"
+      - "go.sum"
+      - "Dockerfile.backend"
+      - ".github/workflows/backend-cd.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Copia los archivos necesarios al servidor
+      - name: Copy Backend Files to Server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DO_HOST }}
+          username: ${{ secrets.DO_USER }}
+          key: ${{ secrets.DO_SSH_KEY }}
+          source: "backend/*,go.mod,go.sum,Dockerfile.backend"
+          target: "/opt/seismic-monitor"
+
+      # Se conecta por SSH y ejecuta el despliegue
+      - name: Build and Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DO_HOST }}
+          username: ${{ secrets.DO_USER }}
+          key: ${{ secrets.DO_SSH_KEY }}
+          script: |
+            # Navegar al directorio base
+            cd /opt/seismic-monitor
+
+            # Construir la imagen Docker usando el archivo nuevo
+            docker build -f Dockerfile.backend -t seismic-backend:latest .
+
+            # Detener y eliminar el contenedor viejo si existe
+            docker stop seismic-backend-container || true
+            docker rm seismic-backend-container || true
+
+            # Levantar el nuevo contenedor
+            # IMPORTANTE: Asegúrate de tener el archivo .env creado en el servidor
+            # en la ruta /opt/seismic-monitor/.env con la DATABASE_URL, SMTP, etc.
+            # Usamos add-host para que pueda conectar a la BD si corre en localhost del Droplet
+            docker run -d \
+              --name seismic-backend-container \
+              --restart always \
+              -p 8081:8081 \
+              --add-host host.docker.internal:host-gateway \
+              --env-file /opt/seismic-monitor/.env \
+              seismic-backend:latest
+
+            # Limpiar imágenes residuales
+            docker image prune -f
