@@ -58,11 +58,14 @@ func main() {
 	userHandler := handlers.NewUserHandler(userRepo)
 	earthquakeHandler := handlers.NewEarthquakeHandler(earthquakeService)
 
-	reportHandler := &handlers.ReportHandler{
-		Repo:       reportRepo,
-		UserRepo:   userRepo,
-		AlertQueue: alertQueue, // La misma cola que usa el worker de Mailtrap
-	}
+	/*
+		reportHandler := &handlers.ReportHandler{
+			Repo:       reportRepo,
+			UserRepo:   userRepo,
+			AlertQueue: alertQueue, // La misma cola que usa el worker de Mailtrap
+		}
+	*/
+	reportHandler := handlers.NewReportHandler(reportRepo, userRepo, alertQueue)
 
 	gin.SetMode(cfg.GinMode)
 
