@@ -35,6 +35,13 @@ CREATE TABLE earthquake (
     ingested_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 4. Create reported earthquakes table for user-reported events
+CREATE TABLE reported_earthquakes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    location GEOGRAPHY(POINT, 4326) NOT NULL,
+    reported_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
 -- 5. Create indexes
 CREATE INDEX idx_user_locations_geom ON user_locations USING GIST (location);
 CREATE INDEX idx_earthquake_geom ON earthquake USING GIST (location);

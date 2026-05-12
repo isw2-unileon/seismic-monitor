@@ -48,11 +48,13 @@ func main() {
 	earthquakeRepo := database.NewEarthquakeRepository(db)
 	earthquakeService := services.NewEarthquakeService(earthquakeRepo)
 	jwtService := auth.NewJWTService(cfg.JWTSecret)
+	reportRepo := &database.ReportRepository{DB: db}
 
 	// 3. Inicializar handlers
 	authHandler := handlers.NewAuthHandler(userRepo, jwtService)
 	userHandler := handlers.NewUserHandler(userRepo)
 	earthquakeHandler := handlers.NewEarthquakeHandler(earthquakeService)
+	reportHandler := &handlers.ReportHandler{Repo: reportRepo}
 
 	gin.SetMode(cfg.GinMode)
 
@@ -86,6 +88,9 @@ func main() {
 	}
 
 	api := r.Group("/api")
+	{
+		api.POST("/report-feeling", reportHandler.HandleReport)
+	}
 	api.GET("/hello", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "Hello from the API"})
 	})
