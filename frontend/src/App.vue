@@ -11,12 +11,12 @@ import { RouterView } from 'vue-router'
 body {
   margin: 0;
   padding: 0;
-  overflow: hidden;
   font-family: system-ui, -apple-system, sans-serif;
+  background-color: #1a1a2e; /* Añadimos el color de fondo global para evitar flashes blancos */
 }
 
 #app {
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  min-height: 100vh;
 }
 </style>
