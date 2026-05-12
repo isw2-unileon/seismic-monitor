@@ -39,3 +39,16 @@ func (r *ReportRepository) RegisterReport(report models.UserReport) (int, error)
 
 	return count, nil
 }
+
+// CleanOldReports elimina los reportes que superen el tiempo de vida especificado (ej. '1 hour')
+func (r *ReportRepository) CleanOldReports(interval string) (int64, error) {
+	// Query para borrar registros antiguos
+	query := fmt.Sprintf("DELETE FROM reported_earthquakes WHERE reported_at < NOW() - INTERVAL '%s'", interval)
+
+	result, err := r.DB.Exec(query)
+	if err != nil {
+		return 0, fmt.Errorf("error limpiando reportes antiguos: %w", err)
+	}
+
+	return result.RowsAffected()
+}

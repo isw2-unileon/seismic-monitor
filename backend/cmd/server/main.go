@@ -129,6 +129,8 @@ func main() {
 	// 3. Arrancamos el Worker de Notificaciones (Consumidor)
 	go services.StartNotificationWorker(alertQueue, emailAdapter)
 
+	services.StartReportCleanupWorker(reportRepo)
+
 	// 4. Instanciamos el Worker de Ingesta
 	ingestionWorker := ingest.NewIngestionWorker(
 		60*time.Second,
