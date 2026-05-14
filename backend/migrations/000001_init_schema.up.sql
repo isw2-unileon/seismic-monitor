@@ -2,7 +2,7 @@
 CREATE EXTENSION IF NOT EXISTS postgis;
 
 -- 1. Create users table
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     username VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
@@ -15,7 +15,7 @@ CREATE TABLE users (
 );
 
 -- 2. Create user's earthquake alert locations table
-CREATE TABLE user_locations (
+CREATE TABLE IF NOT EXISTS user_locations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     label VARCHAR(100), -- Opcional: "Casa", "Trabajo", etc.
@@ -25,7 +25,7 @@ CREATE TABLE user_locations (
 );
 
 -- 3. Create earthquakes table with the USGS ID as primary key
-CREATE TABLE earthquake (
+CREATE TABLE IF NOT EXISTS earthquake (
     usgs_id VARCHAR(50) PRIMARY KEY,
     richter_scale NUMERIC(4,2) NOT NULL,
     place_name VARCHAR(255) NOT NULL,
@@ -36,6 +36,6 @@ CREATE TABLE earthquake (
 );
 
 -- 5. Create indexes
-CREATE INDEX idx_user_locations_geom ON user_locations USING GIST (location);
-CREATE INDEX idx_earthquake_geom ON earthquake USING GIST (location);
-CREATE INDEX idx_earthquake_time ON earthquake (ocurred_at DESC);
+CREATE INDEX IF NOT EXISTS idx_user_locations_geom ON user_locations USING GIST (location);
+CREATE INDEX IF NOT EXISTS idx_earthquake_geom ON earthquake USING GIST (location);
+CREATE INDEX IF NOT EXISTS idx_earthquake_time ON earthquake (ocurred_at DESC);

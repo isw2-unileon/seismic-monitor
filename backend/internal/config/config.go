@@ -25,7 +25,7 @@ func Load() *Config {
 	return &Config{
 		// Ahora getEnv sí encontrará la variable cargada del .env
 		DatabaseURL: getEnv("DATABASE_URL", "postgres://db:db@localhost:5432/db?sslmode=disable"),
-		Port:        getEnv("PORT", "8081"),
+		Port:        getEnv("API_PORT", "8081"),
 		GinMode:     getEnv("GIN_MODE", "debug"),
 		JWTSecret:   getEnv("JWT_SECRET", "tu_secreto_super_seguro_por_defecto"),
 	}

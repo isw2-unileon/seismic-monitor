@@ -102,5 +102,28 @@ export const apiService = {
     }
 
     return await response.json();
+  },
+
+  /**
+   * Updates user location and alert preferences.
+   * @param {Object} data - { latitude, longitude, alert_radius, min_magnitude }
+   */
+  async updateUserSettings(data) {
+    const token = localStorage.getItem('auth_token');
+    const response = await fetch('/api/v1/users/location', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(data)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || "Failed to update settings");
+    }
+
+    return await response.json();
   }
 };
