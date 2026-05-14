@@ -22,8 +22,8 @@ const mapUSGSData = (data) => {
       ...feature,
       properties: {
         ...feature.properties,
-        // Map USGS 'mag' to 'magnitude' expected by the frontend
-        magnitude: feature.properties.mag,
+        // Map USGS 'mag' or backend 'mag' to 'magnitude' expected by the frontend
+        magnitude: feature.properties.mag || feature.properties.magnitude,
         // Ensure time is in a format the frontend can handle (USGS returns ms)
         time: feature.properties.time,
         // Map top-level id to properties.id for component compatibility
@@ -36,12 +36,12 @@ const mapUSGSData = (data) => {
 export const apiService = {
   async getEarthquakes() {
     try {
-      const response = await fetch(getUSGSUrl());
-      if (!response.ok) throw new Error('USGS API response was not ok');
+      const response = await fetch(`${API_BASE_URL}/earthquakes?limit=100`);
+      if (!response.ok) throw new Error('Backend API response was not ok');
       const data = await response.json();
       return mapUSGSData(data);
     } catch (error) {
-      console.error("Error fetching earthquakes from USGS:", error);
+      console.error("Error fetching earthquakes from backend:", error);
       return { type: 'FeatureCollection', features: [] };
     }
   },

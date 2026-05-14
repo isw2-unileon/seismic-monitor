@@ -34,12 +34,12 @@ func (r *EarthquakeRepository) GetFilteredEarthquakes(minMag float64, limit int)
 	for rows.Next() {
 		var eq models.Feature
 		var lon, lat, depth float64
-		var ocurredAt time.Time
-		err := rows.Scan(&eq.ID, &eq.Info.Mag, &eq.Info.Place, &ocurredAt, &lon, &lat, &depth)
+		var occurredAt time.Time
+		err := rows.Scan(&eq.ID, &eq.Info.Mag, &eq.Info.Place, &occurredAt, &lon, &lat, &depth)
 		if err != nil {
 			return nil, fmt.Errorf("error al escanear sismo: %w", err)
 		}
-		eq.Info.Time = ocurredAt.UnixNano() / int64(time.Millisecond)
+		eq.Info.Time = occurredAt.UnixNano() / int64(time.Millisecond)
 		eq.Geometry.Coordinates = []float64{lon, lat, depth}
 		earthquakes = append(earthquakes, eq)
 	}
@@ -87,12 +87,12 @@ func (r *EarthquakeRepository) GetEarthquakesSince(since time.Time) ([]models.Fe
 	for rows.Next() {
 		var eq models.Feature
 		var lon, lat, depth float64
-		var ocurredAt time.Time
-		err := rows.Scan(&eq.ID, &eq.Info.Mag, &eq.Info.Place, &ocurredAt, &lon, &lat, &depth)
+		var occurredAt time.Time
+		err := rows.Scan(&eq.ID, &eq.Info.Mag, &eq.Info.Place, &occurredAt, &lon, &lat, &depth)
 		if err != nil {
 			return nil, fmt.Errorf("error al escanear sismo: %w", err)
 		}
-		eq.Info.Time = ocurredAt.UnixNano() / int64(time.Millisecond)
+		eq.Info.Time = occurredAt.UnixNano() / int64(time.Millisecond)
 		eq.Geometry.Coordinates = []float64{lon, lat, depth}
 		earthquakes = append(earthquakes, eq)
 	}
