@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -39,6 +40,7 @@ func (h *EarthquakeHandler) GetEarthquakes(c *gin.Context) {
 	// Asumiremos que el Service fue actualizado para delegar o se usaba Repo antes.
 	earthquakes, err := h.Service.GetFilteredEarthquakes(minMag, limit)
 	if err != nil {
+		fmt.Printf("Error en GetFilteredEarthquakes: %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "no se pudieron obtener los sismos"})
 		return
 	}
@@ -46,6 +48,7 @@ func (h *EarthquakeHandler) GetEarthquakes(c *gin.Context) {
 	features := make([]models.Feature, len(earthquakes))
 	for i := range earthquakes {
 		earthquakes[i].Type = "Feature"
+		// Estructura compatible con FeatureCollection de GeoJSON
 		features[i] = earthquakes[i]
 	}
 
@@ -72,6 +75,7 @@ func (h *EarthquakeHandler) GetHistory(c *gin.Context) {
 	features := make([]models.Feature, len(earthquakes))
 	for i := range earthquakes {
 		earthquakes[i].Type = "Feature"
+		// Estructura compatible con FeatureCollection de GeoJSON
 		features[i] = earthquakes[i]
 	}
 

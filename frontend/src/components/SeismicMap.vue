@@ -134,18 +134,21 @@ onMounted(() => {
   tempLayer.addTo(mapInstance.value)
 
   const earthquakesLayer = L.layerGroup().addTo(mapInstance.value)
-  apiService.getEarthquakesHistory().then(data => {
+  apiService.getEarthquakes().then(data => {
     if (data && data.features) {
       data.features.forEach(eq => {
         const coords = [eq.geometry.coordinates[1], eq.geometry.coordinates[0]]
         const mag = eq.properties.magnitude
         
-        let color = '#4cd137'
-        if (mag >= 5) color = '#e84118'
-        else if (mag >= 3) color = '#fbc531'
+        // Escala de colores de Verde a Rojo
+        let color = '#4cd137' // < 3: Verde
+        if (mag >= 7) color = '#c23616'      // >= 7: Granate/Rojo oscuro
+        else if (mag >= 5) color = '#e84118' // 5-7: Rojo
+        else if (mag >= 4) color = '#e1b12c' // 4-5: Naranja/Ámbar
+        else if (mag >= 3) color = '#fbc531' // 3-4: Amarillo
 
         const circle = L.circleMarker(coords, {
-          radius: Math.max(mag * 3, 5),
+          radius: Math.max(mag * 3.5, 4),
           fillColor: color,
           color: '#fff',
           weight: 1,
@@ -155,10 +158,11 @@ onMounted(() => {
 
         const time = new Date(eq.properties.time).toLocaleString()
         circle.bindPopup(`
-          <div style="font-family: sans-serif; text-align: center;">
-            <strong style="color: ${color}; font-size: 16px;">M ${mag.toFixed(1)}</strong><br>
-            <span style="font-size: 12px; color: #555;">${time}</span><br>
-            <div style="margin-top: 5px; font-size: 14px;">${eq.properties.place}</div>
+          <div style="font-family: sans-serif; text-align: center; color: #1a1a2e;">
+            <strong style="color: ${color}; font-size: 18px;">M ${mag.toFixed(1)}</strong><br>
+            <span style="font-size: 12px; color: #666;">${time}</span><hr style="border: 0; border-top: 1px solid #eee; margin: 5px 0;">
+            <div style="font-size: 14px; font-weight: 500;">${eq.properties.place}</div>
+            <div style="font-size: 11px; color: #999; margin-top: 3px;">Profundidad: ${eq.geometry.coordinates[2].toFixed(1)} km</div>
           </div>
         `)
       })
