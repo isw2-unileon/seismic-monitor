@@ -13,6 +13,7 @@ type Feature struct {
 	Type     string             `json:"type"` // Suele ser "Feature"
 	Info     EarthquakeProps    `json:"properties"`
 	Geometry EarthquakeGeometry `json:"geometry"`
+	AIAdvice string             `json:"ai_advice,omitempty"`
 }
 
 // EarthquakeProps contiene los detalles descriptivos
