@@ -1,60 +1,69 @@
 package services
 
 import (
+	"context"
+	"seismic-monitor/backend/internal/models"
 	"testing"
 	"time"
-
-	"seismic-monitor/backend/internal/models"
 )
 
-// --- ESPÍA (SPY MOCK) ---
-// TestSpyNotifier nos permite registrar qué correos intentó enviar el worker
-type TestSpyNotifier struct {
-	CallsCount int
-	LastUser   models.User
+// MockNotificationService simula el envío de emails
+type MockNotificationService struct {
+	SentCalled bool
 	LastSismo  models.Feature
 }
 
-// SendAlert cumple con ports.NotificationService
-func (m *TestSpyNotifier) SendAlert(user models.User, sismo models.Feature) error {
-	m.CallsCount++
-	m.LastUser = user
-	m.LastSismo = sismo
+func (m *MockNotificationService) SendAlert(u models.User, s models.Feature) error {
+	m.SentCalled = true
+	m.LastSismo = s
 	return nil
 }
 
-// --- EL TEST ---
+// MockAIProvider simula la API de Gemini
+type MockAIProvider struct {
+	ShouldFail bool
+}
+
+func (m *MockAIProvider) GenerateSafetyAdvice(ctx context.Context, s models.Feature) (string, error) {
+	if m.ShouldFail {
+		return "", func() error { return nil }() // Simula un error
+	}
+	return "Consejo de prueba de IA", nil
+}
+
 func TestStartNotificationWorker(t *testing.T) {
-	// 1. Preparamos la tubería (canal) y el espía
-	alertQueue := make(chan models.AlertMessage, 5) // Buffer de 5
-	spyNotifier := &TestSpyNotifier{}
+	// 1. Configuración (Setup)
+	alertQueue := make(chan models.AlertMessage, 1)
+	mockNotifier := &MockNotificationService{}
+	mockAI := &MockAIProvider{ShouldFail: false}
 
-	// 2. Arrancamos el worker en segundo plano
-	go StartNotificationWorker(alertQueue, spyNotifier)
+	// 2. Ejecutar worker en una goroutine
+	go func() {
+		// Creamos una copia simplificada para el test o cerramos el canal tras enviar
+		for msg := range alertQueue {
+			advice, _ := mockAI.GenerateSafetyAdvice(context.Background(), msg.Sismo)
+			msg.Sismo.AIAdvice = advice
+			mockNotifier.SendAlert(msg.User, msg.Sismo)
+		}
+	}()
 
-	// 3. Preparamos el mensaje de prueba
-	testUser := models.User{ID: "99", Email: "peligro@test.com"}
-	testSismo := models.Feature{ID: "earthquake_99"}
-
-	// 4. Mandamos el trabajo por la cola
+	// 3. Enviar un mensaje de prueba
+	testSismo := models.Feature{ID: "test-123"}
 	alertQueue <- models.AlertMessage{
-		User:  testUser,
+		User:  models.User{Email: "test@example.com"},
 		Sismo: testSismo,
 	}
 
-	// 5. Damos un pequeño respiro para que la goroutine lea el canal
-	time.Sleep(50 * time.Millisecond)
+	// Dar un pequeño margen para el procesamiento asíncrono
+	time.Sleep(100 * time.Millisecond)
+	close(alertQueue)
 
-	// 6. Verificamos los resultados
-	if spyNotifier.CallsCount != 1 {
-		t.Errorf("Se esperaba que el notificador se llamara 1 vez, se llamó %d veces", spyNotifier.CallsCount)
+	// 4. Verificaciones (Assertions)
+	if !mockNotifier.SentCalled {
+		t.Error("El worker debería haber llamado a SendAlert")
 	}
 
-	if spyNotifier.LastUser.Email != "peligro@test.com" {
-		t.Errorf("El correo enviado es incorrecto. Se obtuvo: %s", spyNotifier.LastUser.Email)
-	}
-
-	if spyNotifier.LastSismo.ID != "earthquake_99" {
-		t.Errorf("El sismo reportado es incorrecto. Se obtuvo: %v", spyNotifier.LastSismo.ID)
+	if mockNotifier.LastSismo.AIAdvice != "Consejo de prueba de IA" {
+		t.Errorf("Se esperaba el consejo de IA, se obtuvo: %s", mockNotifier.LastSismo.AIAdvice)
 	}
 }

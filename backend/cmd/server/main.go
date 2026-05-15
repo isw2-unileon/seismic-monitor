@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"seismic-monitor/backend/internal/adapters/ai"
 	"seismic-monitor/backend/internal/adapters/email"
 	"seismic-monitor/backend/internal/adapters/usgs"
 	"seismic-monitor/backend/internal/api/handlers"
@@ -57,6 +58,9 @@ func main() {
 	authHandler := handlers.NewAuthHandler(userRepo, jwtService)
 	userHandler := handlers.NewUserHandler(userRepo)
 	earthquakeHandler := handlers.NewEarthquakeHandler(earthquakeService)
+
+	geminiKey := os.Getenv("GEMINI_API_KEY")
+	aiProvider := &ai.GeminiAdapter{APIKey: geminiKey}
 
 	/*
 		reportHandler := &handlers.ReportHandler{
@@ -130,7 +134,7 @@ func main() {
 	}
 
 	// 3. Arrancamos el Worker de Notificaciones (Consumidor)
-	go services.StartNotificationWorker(alertQueue, emailAdapter)
+	go services.StartNotificationWorker(alertQueue, emailAdapter, aiProvider)
 
 	services.StartReportCleanupWorker(reportRepo)
 
