@@ -106,3 +106,31 @@ func (r *UserRepository) GetAffectedUsers(sismo models.Feature) ([]models.User, 
 
 	return users, nil
 }
+
+// GetUsersNearLocation busca usuarios que tengan un punto geográfico dentro de su radio de alerta
+func (r *UserRepository) GetUsersNearLocation(lon, lat float64) ([]models.User, error) {
+	query := `
+		SELECT id, email, alert_radius_km
+		FROM users
+		WHERE ST_DWithin(
+			location::geography, 
+			ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography, 
+			alert_radius_km * 1000
+		)`
+
+	rows, err := r.DB.Query(query, lon, lat)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []models.User
+	for rows.Next() {
+		var u models.User
+		if err := rows.Scan(&u.ID, &u.Email, &u.AlertRadius); err != nil {
+			return nil, err
+		}
+		users = append(users, u)
+	}
+	return users, nil
+}

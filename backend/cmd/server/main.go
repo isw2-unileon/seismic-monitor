@@ -43,16 +43,29 @@ func main() {
 	defer db.Close()
 	logger.Info("Conexión a PostgreSQL establecida con éxito")
 
+	// 1. Creamos la "Cola" en memoria (buffer de 100 mensajes)
+	alertQueue := make(chan models.AlertMessage, 100)
+
 	// 2. Inicializar repositorios y servicios
 	userRepo := database.NewUserRepository(db)
 	earthquakeRepo := database.NewEarthquakeRepository(db)
 	earthquakeService := services.NewEarthquakeService(earthquakeRepo)
 	jwtService := auth.NewJWTService(cfg.JWTSecret)
+	reportRepo := &database.ReportRepository{DB: db}
 
 	// 3. Inicializar handlers
 	authHandler := handlers.NewAuthHandler(userRepo, jwtService)
 	userHandler := handlers.NewUserHandler(userRepo)
 	earthquakeHandler := handlers.NewEarthquakeHandler(earthquakeService)
+
+	/*
+		reportHandler := &handlers.ReportHandler{
+			Repo:       reportRepo,
+			UserRepo:   userRepo,
+			AlertQueue: alertQueue, // La misma cola que usa el worker de Mailtrap
+		}
+	*/
+	reportHandler := handlers.NewReportHandler(reportRepo, userRepo, alertQueue)
 
 	gin.SetMode(cfg.GinMode)
 
@@ -86,6 +99,9 @@ func main() {
 	}
 
 	api := r.Group("/api")
+	{
+		api.POST("/report-feeling", reportHandler.HandleReport)
+	}
 	api.GET("/hello", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "Hello from the API"})
 	})
@@ -105,9 +121,6 @@ func main() {
 
 	// Emails
 
-	// 1. Creamos la "Cola" en memoria (buffer de 100 mensajes)
-	alertQueue := make(chan models.AlertMessage, 100)
-
 	// 2. Instanciamos nuestro Adaptador de Emails
 	emailAdapter := &email.SMTPSender{
 		Host:     os.Getenv("SMTP_HOST"),
@@ -118,6 +131,8 @@ func main() {
 
 	// 3. Arrancamos el Worker de Notificaciones (Consumidor)
 	go services.StartNotificationWorker(alertQueue, emailAdapter)
+
+	services.StartReportCleanupWorker(reportRepo)
 
 	// 4. Instanciamos el Worker de Ingesta
 	ingestionWorker := ingest.NewIngestionWorker(
