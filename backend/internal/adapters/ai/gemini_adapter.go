@@ -22,20 +22,23 @@ func (a *GeminiAdapter) GenerateSafetyAdvice(ctx context.Context, sismo models.F
 
 	model := client.GenerativeModel("gemini-1.5-flash")
 
-	// Creamos un prompt específico y profesional
+	depth := 0.0
+	if len(sismo.Geometry.Coordinates) >= 3 {
+		depth = sismo.Geometry.Coordinates[2]
+	}
+
 	prompt := fmt.Sprintf(
 		"Actúa como un experto en gestión de catástrofes. Se ha detectado un sismo en %s de magnitud %.1f y profundidad %.1f km. "+
-			"Proporciona un análisis de riesgo muy breve (máximo 2 líneas) y 3 consejos de seguridad específicos para esta situación.",
-		sismo.Info.Place, sismo.Info.Mag, sismo.Geometry.Coordinates[2],
+			"Proporciona un análisis de riesgo muy breve (máximo 2 líneas) según la situación y zona donde se produce y 3 consejos de seguridad específicos para esta situación.",
+		sismo.Info.Place, sismo.Info.Mag, depth,
 	)
 
 	resp, err := model.GenerateContent(ctx, genai.Text(prompt))
 	if err != nil {
-		return "Mantente en un lugar seguro y sigue las instrucciones de las autoridades locales.", nil // Fallback seguro
+		return "Mantente en un lugar seguro y sigue las instrucciones de las autoridades locales.", nil
 	}
 
-	// Extraemos el texto de la respuesta
-	if len(resp.Candidates) > 0 {
+	if resp != nil && len(resp.Candidates) > 0 && resp.Candidates[0].Content != nil && len(resp.Candidates[0].Content.Parts) > 0 {
 		if part, ok := resp.Candidates[0].Content.Parts[0].(genai.Text); ok {
 			return string(part), nil
 		}

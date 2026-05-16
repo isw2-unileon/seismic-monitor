@@ -49,7 +49,13 @@ func (h *ReportHandler) HandleReport(c *gin.Context) {
 		return
 	}
 
-	// 2. Registrar el reporte y obtener el conteo de clúster
+	if report.Latitude < -90 || report.Latitude > 90 || report.Longitude < -180 || report.Longitude > 180 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Coordenadas geográficas fuera de los límites de la Tierra",
+		})
+		return
+	}
+
 	count, err := h.Repo.RegisterReport(report)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error de base de datos"})

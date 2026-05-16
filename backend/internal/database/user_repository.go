@@ -84,6 +84,10 @@ func (r *UserRepository) GetAffectedUsers(sismo models.Feature) ([]models.User, 
 			alert_radius_km * 1000
 		) AND min_magnitude_alert <= $3`
 
+	if len(sismo.Geometry.Coordinates) < 2 {
+		return nil, fmt.Errorf("no se pueden calcular usuarios afectados: el sismo no tiene coordenadas válidas")
+	}
+
 	lon := sismo.Geometry.Coordinates[0]
 	lat := sismo.Geometry.Coordinates[1]
 	mag := sismo.Info.Mag

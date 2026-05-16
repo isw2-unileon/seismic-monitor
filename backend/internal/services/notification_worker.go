@@ -10,30 +10,41 @@ import (
 
 // StartNotificationWorker escucha la cola y envía los correos
 func StartNotificationWorker(
+	ctx context.Context,
 	alertQueue <-chan models.AlertMessage,
 	notifier ports.NotificationService,
 	aiProvider ports.AIProvider,
 ) {
 	log.Println("[Notification Worker] Iniciado y esperando alertas...")
 
-	for msg := range alertQueue {
-		// 1. Generar consejo de IA (usamos un contexto con timeout por seguridad)
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		advice, err := aiProvider.GenerateSafetyAdvice(ctx, msg.Sismo)
-		cancel()
+	for {
+		select {
+		case <-ctx.Done():
+			log.Println("[Notification Worker] Cerrando de forma limpia (Graceful Shutdown)...")
+			return
+		case msg, ok := <-alertQueue:
+			if !ok {
+				log.Println("[Notification Worker] Cola de alertas cerrada.")
+				return
+			}
 
-		if err != nil {
-			log.Printf("[Notification Worker] Error IA: %v. Usando fallback.", err)
-			advice = "Mantente informado por canales oficiales y sigue los protocolos de seguridad."
-		}
+			go func(m models.AlertMessage) {
+				aiCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+				advice, err := aiProvider.GenerateSafetyAdvice(aiCtx, msg.Sismo)
+				cancel()
 
-		// 2. Inyectar el consejo en el sismo antes de enviarlo
-		msg.Sismo.AIAdvice = advice
+				if err != nil {
+					log.Printf("[Notification Worker] Error en IA para sismo %s: %v. Usando copia de seguridad.", msg.Sismo.ID, err)
+					advice = "Atención: Siga las indicaciones de los equipos de emergencia de su localidad."
+				}
 
-		// 3. Enviar la alerta final (vía SMTP, Mock, etc.)
-		err = notifier.SendAlert(msg.User, msg.Sismo)
-		if err != nil {
-			log.Printf("[Notification Worker] Error enviando alerta a %s: %v", msg.User.Email, err)
+				msg.Sismo.AIAdvice = advice
+
+				err = notifier.SendAlert(msg.User, msg.Sismo)
+				if err != nil {
+					log.Printf("[Notification Worker] Error crítico de envío a %s: %v", msg.User.Email, err)
+				}
+			}(msg)
 		}
 	}
 }
