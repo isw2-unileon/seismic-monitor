@@ -40,6 +40,11 @@ func (s *SMTPSender) SendAlert(user models.User, sismo models.Feature) error {
 		)
 	}
 
+	// Dentro de SendAlert, cuando construyes el body:
+	body += "\n\n--- 💡 ANÁLISIS DE SEGURIDAD (IA) ---\n"
+	body += sismo.AIAdvice
+	body += "\n--------------------------------------\n"
+
 	// Construimos el mensaje siguiendo el estándar de red SMTP
 	// Importante: El formato debe ser "Subject: ... \n\n Cuerpo"
 	messageStr := fmt.Sprintf("From: %s\nTo: %s\nSubject: %s\n\n%s",
