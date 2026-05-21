@@ -11,22 +11,25 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type ReportHandler struct {
-	Repo       *database.ReportRepository
-	UserRepo   *database.UserRepository
-	AlertQueue chan<- models.AlertMessage
+type ReportRepository interface {
+	RegisterReport(report models.UserReport) (int, error)
+}
 
-	// Sistema anti-spam
-	lastReports sync.Map // Guarda IP -> time.Time
+type ReportHandler struct {
+	Repo        ReportRepository         // 2. CAMBIADO: Antes era *database.ReportRepository, ahora usa la interfaz
+	UserRepo    *database.UserRepository // (Si quieres, en el futuro puedes hacer lo mismo con este)
+	AlertQueue  chan<- models.AlertMessage
+	lastReports sync.Map
 	limit       time.Duration
 }
 
-func NewReportHandler(repo *database.ReportRepository, userRepo *database.UserRepository, queue chan<- models.AlertMessage) *ReportHandler {
+// 3. CAMBIADO: El primer argumento ahora recibe la interfaz 'ReportRepository'
+func NewReportHandler(repo ReportRepository, userRepo *database.UserRepository, queue chan<- models.AlertMessage) *ReportHandler {
 	return &ReportHandler{
 		Repo:       repo,
 		UserRepo:   userRepo,
 		AlertQueue: queue,
-		limit:      2 * time.Minute, // Un reporte cada 2 minutos por IP
+		limit:      2 * time.Minute,
 	}
 }
 
@@ -49,7 +52,13 @@ func (h *ReportHandler) HandleReport(c *gin.Context) {
 		return
 	}
 
-	// 2. Registrar el reporte y obtener el conteo de clúster
+	if report.Latitude < -90 || report.Latitude > 90 || report.Longitude < -180 || report.Longitude > 180 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Coordenadas geográficas fuera de los límites de la Tierra",
+		})
+		return
+	}
+
 	count, err := h.Repo.RegisterReport(report)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error de base de datos"})

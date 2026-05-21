@@ -123,9 +123,6 @@ func main() {
 	provider := &usgs.USGSAdapter{URL: usgsURL}
 	var spatialProvider ports.SpatialRepository = userRepo
 
-	// Emails
-
-	// 2. Instanciamos nuestro Adaptador de Emails
 	emailAdapter := &email.SMTPSender{
 		Host:     os.Getenv("SMTP_HOST"),
 		Port:     os.Getenv("SMTP_PORT"),
@@ -133,12 +130,10 @@ func main() {
 		Password: os.Getenv("SMTP_PASS"),
 	}
 
-	// 3. Arrancamos el Worker de Notificaciones (Consumidor)
-	go services.StartNotificationWorker(alertQueue, emailAdapter, aiProvider)
+	go services.StartNotificationWorker(ctx, alertQueue, emailAdapter, aiProvider)
 
 	services.StartReportCleanupWorker(reportRepo)
 
-	// 4. Instanciamos el Worker de Ingesta
 	ingestionWorker := ingest.NewIngestionWorker(
 		60*time.Second,
 		provider,
@@ -147,7 +142,6 @@ func main() {
 		alertQueue,
 	)
 
-	// Arrancamos el worker en una goroutine
 	go ingestionWorker.Start(stopWorker)
 
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
