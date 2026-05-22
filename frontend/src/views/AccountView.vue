@@ -12,8 +12,8 @@ const userData = ref({
   latitude: 0,
   longitude: 0,
   alert_centers: [] 
-  // Nota: Mantenemos el radius guardado en la lógica interna del localStorage 
-  // para que el mapa recuerde el último que usaste, pero ya no se muestra aquí.
+  // Note: We keep the radius saved in the internal localStorage logic
+  // so the map remembers the last one you used, but it is no longer shown here.
 })
 
 onMounted(() => {
@@ -32,7 +32,7 @@ const saveSettings = async () => {
   localStorage.setItem('user_data', JSON.stringify(userData.value))
   
   try {
-    // Si hay centros, usamos el último para la ubicación del backend
+    // If there are centers, we use the last one for the backend location
     const lastCenter = userData.value.alert_centers.length > 0 
       ? userData.value.alert_centers[userData.value.alert_centers.length - 1]
       : { lat: userData.value.latitude, lng: userData.value.longitude, radius: userData.value.alert_radius_km }
@@ -43,10 +43,10 @@ const saveSettings = async () => {
       alert_radius: lastCenter.radius || userData.value.alert_radius_km,
       min_magnitude: userData.value.min_magnitude
     })
-    alert('Preferencias actualizadas y sincronizadas')
+    alert('Preferences updated and synchronized')
   } catch (error) {
-    console.error("Error sincronizando settings:", error)
-    alert('Preferencias guardadas localmente, pero error al sincronizar con el servidor')
+    console.error("Error synchronizing settings:", error)
+    alert('Preferences saved locally, but error synchronizing with the server')
   }
 }
 
@@ -62,16 +62,16 @@ const goBack = () => router.push({ name: 'map' })
   <div class="account-wrapper">
     <div class="settings-card">
       <header class="card-header">
-        <button @click="goBack" class="back-btn">← Volver al Mapa</button>
-        <h1>Configuración de Cuenta</h1>
+        <button @click="goBack" class="back-btn">← Back to Map</button>
+        <h1>Account Settings</h1>
       </header>
 
       <form @submit.prevent="saveSettings" class="settings-form">
         <div class="form-section">
-          <h3><span class="icon">👤</span> Información Personal</h3>
+          <h3><span class="icon">👤</span> Personal Information</h3>
           <div class="form-group">
-            <label>Nombre Completo</label>
-            <input v-model="userData.name" type="text" placeholder="Ej: Juan Pérez">
+            <label>Full Name</label>
+            <input v-model="userData.name" type="text" placeholder="e.g.: John Doe">
           </div>
           <div class="form-group">
             <label>Email</label>
@@ -80,22 +80,22 @@ const goBack = () => router.push({ name: 'map' })
         </div>
 
         <div class="form-section">
-          <h3><span class="icon">⚙️</span> Preferencias de Alerta</h3>
+          <h3><span class="icon">⚙️</span> Alert Preferences</h3>
           <div class="form-group">
-            <label>Magnitud Mínima de Alerta (Global)</label>
+            <label>Minimum Alert Magnitude (Global)</label>
             <div class="magnitude-control">
               <input v-model.number="userData.min_magnitude" type="range" min="0" max="10" step="0.1" class="mag-slider">
               <span class="mag-value">M {{ userData.min_magnitude }}</span>
             </div>
-            <p class="help-text">Solo se te notificará de terremotos con una magnitud igual o superior a este valor.</p>
+            <p class="help-text">You will only be notified of earthquakes with a magnitude equal to or greater than this value.</p>
           </div>
         </div>
 
         <div class="form-section">
-          <h3><span class="icon">📡</span> Mis Zonas de Alerta</h3>
+          <h3><span class="icon">📡</span> My Alert Zones</h3>
           <div class="centers-list">
             <div v-if="userData.alert_centers.length === 0" class="no-data">
-              No tienes zonas guardadas. Haz clic en el mapa para añadir una.
+              No saved zones. Click on the map to add one.
             </div>
             
             <div v-for="center in userData.alert_centers" :key="center.id" class="center-item">
@@ -106,12 +106,12 @@ const goBack = () => router.push({ name: 'map' })
                   <span class="badge magnitude" v-if="center.min_magnitude">M {{ center.min_magnitude }}</span>
                 </div>
               </div>
-              <button type="button" @click="removeCenter(center.id)" class="btn-delete-small" title="Eliminar zona">🗑</button>
+              <button type="button" @click="removeCenter(center.id)" class="btn-delete-small" title="Delete zone">🗑</button>
             </div>
           </div>
         </div>
 
-        <button type="submit" class="save-btn">Guardar Cambios</button>
+        <button type="submit" class="save-btn">Save Changes</button>
       </form>
     </div>
   </div>
@@ -119,19 +119,39 @@ const goBack = () => router.push({ name: 'map' })
 
 <style scoped>
 .account-wrapper {
-  height: 100vh;
+  min-height: 100vh;
   overflow-y: auto;
   background-color: #1a1a2e;
-  padding: 2rem 1rem 10rem 1rem; 
+  padding: 4rem 1rem; 
   display: flex;
-  justify-content: center;
-  align-items: flex-start;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
+  position: relative;
+}
+
+.account-wrapper::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url('/earthquake_photo_3.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: scroll;
+  filter: blur(1px);
+  opacity: 0.4;
+  z-index: 0;
 }
 
 .settings-card { 
-  background: #16213e; 
+  position: relative;
+  z-index: 1;
+  background: rgba(22, 33, 62, 0.95); 
   width: 100%; 
   max-width: 650px; 
   border-radius: 12px; 
@@ -139,6 +159,7 @@ const goBack = () => router.push({ name: 'map' })
   border: 1px solid #2a3158; 
   color: #fff; 
   box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+  margin-bottom: 4rem;
 }
 
 .card-header { display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2.5rem; }
