@@ -46,13 +46,13 @@ const formatTime = (isoString) => {
 <template>
   <div class="view-container">
     <header class="view-header">
-      <button @click="goBack" class="back-btn">← Volver al Mapa</button>
-      <h1>Historial Sísmico</h1>
+      <button @click="goBack" class="back-btn">← Back to Map</button>
+      <h1>Seismic History</h1>
     </header>
 
     <div class="filters-container">
       <div class="filter-item">
-        <label for="magnitude-range">Magnitud Mínima: {{ minMagnitude.toFixed(1) }}</label>
+        <label for="magnitude-range">Minimum Magnitude: {{ minMagnitude.toFixed(1) }}</label>
         <input 
           id="magnitude-range" 
           type="range" 
@@ -64,7 +64,7 @@ const formatTime = (isoString) => {
       </div>
       
       <div class="filter-item">
-        <label for="time-range">Ventana de Tiempo: Últimas {{ hours }} {{ hours == 1 ? 'hora' : 'horas' }}</label>
+        <label for="time-range">Time Window: Last {{ hours }} {{ hours == 1 ? 'hour' : 'hours' }}</label>
         <input 
           id="time-range" 
           type="range" 
@@ -75,11 +75,11 @@ const formatTime = (isoString) => {
         >
       </div>
 
-      <button @click="applyFilters" class="apply-btn">Aplicar Filtros</button>
+      <button @click="applyFilters" class="apply-btn">Apply Filters</button>
     </div>
     
     <div v-if="loading" class="loading">
-      Cargando terremotos recientes...
+      Loading recent earthquakes...
     </div>
     
     <div v-else-if="error" class="error">
@@ -87,7 +87,7 @@ const formatTime = (isoString) => {
     </div>
     
     <div v-else-if="earthquakes.length === 0" class="no-data">
-      No se han registrado terremotos con magnitud {{ minMagnitude }} o superior en las últimas {{ hours }} {{ hours == 1 ? 'hora' : 'horas' }}.
+      No earthquakes with magnitude {{ minMagnitude }} or greater have been recorded in the last {{ hours }} {{ hours == 1 ? 'hour' : 'hours' }}.
     </div>
     
     <div v-else class="earthquake-list">
@@ -99,10 +99,10 @@ const formatTime = (isoString) => {
           <span class="time">{{ formatTime(eq.properties.time) }}</span>
         </div>
         <div class="eq-details">
-          <p><strong>Ubicación:</strong> {{ eq.properties.place }}</p>
-          <p><strong>Profundidad:</strong> {{ eq.properties.depth_km || eq.geometry.coordinates[2] }} km</p>
+          <p><strong>Location:</strong> {{ eq.properties.place }}</p>
+          <p><strong>Depth:</strong> {{ eq.properties.depth_km || eq.geometry.coordinates[2] }} km</p>
           <p class="coords">
-            <strong>Coordenadas:</strong> 
+            <strong>Coordinates:</strong> 
             {{ eq.geometry.coordinates[1].toFixed(4) }}, {{ eq.geometry.coordinates[0].toFixed(4) }}
           </p>
         </div>
@@ -118,9 +118,28 @@ const formatTime = (isoString) => {
   background-color: #1a1a2e;
   min-height: 100vh;
   font-family: system-ui, -apple-system, sans-serif;
+  position: relative;
+}
+
+.view-container::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url('/earthquake_photo_4.jpg');
+  background-size: cover;
+  background-position: center;
+  filter: blur(2px);
+  opacity: 0.3;
+  z-index: 0;
+  pointer-events: none;
 }
 
 .view-header {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   gap: 1.5rem;
@@ -151,10 +170,12 @@ h1 {
 }
 
 .filters-container {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-wrap: wrap;
   gap: 2rem;
-  background-color: #16213e;
+  background-color: rgba(22, 33, 62, 0.9);
   padding: 1.5rem;
   border-radius: 8px;
   margin-bottom: 2rem;
@@ -203,8 +224,10 @@ input[type="range"] {
 }
 
 .loading, .error, .no-data {
+  position: relative;
+  z-index: 1;
   padding: 2rem;
-  background-color: #16213e;
+  background-color: rgba(22, 33, 62, 0.9);
   border-radius: 8px;
   text-align: center;
   font-size: 1.1rem;
@@ -217,6 +240,8 @@ input[type="range"] {
 }
 
 .earthquake-list {
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 1.5rem;
@@ -224,7 +249,7 @@ input[type="range"] {
 }
 
 .earthquake-card {
-  background-color: #16213e;
+  background-color: rgba(22, 33, 62, 0.9);
   border-radius: 8px;
   padding: 1.5rem;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);

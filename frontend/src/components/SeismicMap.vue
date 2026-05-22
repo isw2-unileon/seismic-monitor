@@ -178,7 +178,7 @@ onMounted(() => {
             <strong style="color: ${color}; font-size: 18px;">M ${mag.toFixed(1)}</strong><br>
             <span style="font-size: 12px; color: #666;">${time}</span><hr style="border: 0; border-top: 1px solid #eee; margin: 5px 0;">
             <div style="font-size: 14px; font-weight: 500;">${eq.properties.place}</div>
-            <div style="font-size: 11px; color: #999; margin-top: 3px;">Profundidad: ${eq.geometry.coordinates[2].toFixed(1)} km</div>
+            <div style="font-size: 11px; color: #999; margin-top: 3px;">Depth: ${eq.geometry.coordinates[2].toFixed(1)} km</div>
           </div>
         `)
       })
@@ -207,11 +207,11 @@ onMounted(() => {
 
     const popupContent = `
       <div style="min-width: 190px; text-align: center; font-family: sans-serif;">
-        <h4 style="margin: 0 0 10px 0; color: #1a1a2e;">Configurar Área</h4>
+        <h4 style="margin: 0 0 10px 0; color: #1a1a2e;">Configure Area</h4>
         
         <div style="margin-bottom: 15px;">
           <div style="display: flex; justify-content: center; align-items: center; gap: 5px; margin-bottom: 5px;">
-            <span style="font-size: 14px; color: #333; font-weight: bold;">Radio:</span>
+            <span style="font-size: 14px; color: #333; font-weight: bold;">Radius:</span>
             <input type="number" id="radius-input" min="1" max="5000" step="1" value="${tempRadius.value}" 
                    style="width: 70px; padding: 4px; border: 1px solid #ccc; border-radius: 4px; text-align: center; font-size: 14px; color: #1a1a2e; outline: none;">
             <span style="font-size: 14px; color: #333;">km</span>
@@ -222,7 +222,7 @@ onMounted(() => {
 
         <div style="margin-bottom: 15px;">
           <div style="display: flex; justify-content: center; align-items: center; gap: 5px; margin-bottom: 5px;">
-            <span style="font-size: 14px; color: #333; font-weight: bold;">Magnitud:</span>
+            <span style="font-size: 14px; color: #333; font-weight: bold;">Magnitude:</span>
             <input type="number" id="magnitude-input" min="0" max="10" step="0.1" value="${tempMagnitude.value}" 
                    style="width: 70px; padding: 4px; border: 1px solid #ccc; border-radius: 4px; text-align: center; font-size: 14px; color: #1a1a2e; outline: none;">
           </div>
@@ -231,7 +231,7 @@ onMounted(() => {
         </div>
 
         <div style="display: flex; gap: 8px;">
-          <button id="save-btn" style="flex: 1; background: #28a745; color: white; border: none; padding: 6px; border-radius: 4px; cursor: pointer; font-weight: bold;">Guardar</button>
+          <button id="save-btn" style="flex: 1; background: #28a745; color: white; border: none; padding: 6px; border-radius: 4px; cursor: pointer; font-weight: bold;">Save</button>
           <button id="cancel-btn" style="flex: 1; background: #dc3545; color: white; border: none; padding: 6px; border-radius: 4px; cursor: pointer; font-weight: bold;">✕</button>
         </div>
       </div>
@@ -302,13 +302,13 @@ onUnmounted(() => {
       <transition name="slide">
         <div v-if="selectedMarkerId" class="delete-wrapper">
           <div v-if="!showDeleteConfirm" class="action-buttons">
-            <button @click="showDeleteConfirm = true" class="delete-trigger-btn">🗑 Eliminar Área</button>
+            <button @click="showDeleteConfirm = true" class="delete-trigger-btn">🗑 Delete Area</button>
             <button @click="selectedMarkerId = null" class="cancel-btn">✕</button>
           </div>
           <div v-else class="confirm-dropdown">
-            <p>¿Borrar este área?</p>
+            <p>Delete this area?</p>
             <div class="confirm-actions">
-              <button @click="deleteCenter" class="btn-confirm-yes">Sí, borrar</button>
+              <button @click="deleteCenter" class="btn-confirm-yes">Yes, delete</button>
               <button @click="showDeleteConfirm = false" class="btn-confirm-no">No</button>
             </div>
           </div>
@@ -322,10 +322,10 @@ onUnmounted(() => {
 
         <transition name="fade">
           <nav v-if="isMenuOpen" class="dropdown-menu">
-            <button @click="navigateTo('account')" class="menu-item"><img :src="getIconUrl('account')" class="menu-icon" /> Cuenta</button>
-            <button @click="navigateTo('history')" class="menu-item"><img :src="getIconUrl('earthquakes')" class="menu-icon" /> Seísmos</button>
+            <button @click="navigateTo('account')" class="menu-item"><img :src="getIconUrl('account')" class="menu-icon" /> Account</button>
+            <button @click="navigateTo('history')" class="menu-item"><img :src="getIconUrl('earthquakes')" class="menu-icon" /> History</button>
             <div class="menu-divider"></div>
-            <button @click="handleLogout" class="menu-item logout"><img :src="getIconUrl('logout')" class="menu-icon" /> Salir</button>
+            <button @click="handleLogout" class="menu-item logout"><img :src="getIconUrl('logout')" class="menu-icon" /> Logout</button>
           </nav>
         </transition>
       </div>
