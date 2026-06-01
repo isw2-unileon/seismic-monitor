@@ -5,15 +5,16 @@ import (
 
 	"seismic-monitor/backend/internal/database"
 	"seismic-monitor/backend/internal/models"
+	"seismic-monitor/backend/internal/ports"
 
 	"github.com/gin-gonic/gin"
 )
 
 type UserHandler struct {
-	Repo *database.UserRepository
+	Repo ports.UserRepository
 }
 
-func NewUserHandler(repo *database.UserRepository) *UserHandler {
+func NewUserHandler(repo ports.UserRepository) *UserHandler {
 	return &UserHandler{Repo: repo}
 }
 

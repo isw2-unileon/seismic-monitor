@@ -7,16 +7,17 @@ import (
 	"seismic-monitor/backend/internal/auth"
 	"seismic-monitor/backend/internal/database"
 	"seismic-monitor/backend/internal/models"
+	"seismic-monitor/backend/internal/ports"
 
 	"github.com/gin-gonic/gin"
 )
 
 type AuthHandler struct {
-	Repo       *database.UserRepository
+	Repo       ports.UserRepository
 	JWTService *auth.JWTService
 }
 
-func NewAuthHandler(repo *database.UserRepository, jwtService *auth.JWTService) *AuthHandler {
+func NewAuthHandler(repo ports.UserRepository, jwtService *auth.JWTService) *AuthHandler {
 	return &AuthHandler{
 		Repo:       repo,
 		JWTService: jwtService,

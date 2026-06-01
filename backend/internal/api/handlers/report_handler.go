@@ -7,6 +7,7 @@ import (
 
 	"seismic-monitor/backend/internal/database"
 	"seismic-monitor/backend/internal/models"
+	"seismic-monitor/backend/internal/ports"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,15 +17,14 @@ type ReportRepository interface {
 }
 
 type ReportHandler struct {
-	Repo        ReportRepository         // 2. CAMBIADO: Antes era *database.ReportRepository, ahora usa la interfaz
-	UserRepo    *database.UserRepository // (Si quieres, en el futuro puedes hacer lo mismo con este)
+	Repo        ReportRepository
+	UserRepo    ports.UserRepository
 	AlertQueue  chan<- models.AlertMessage
 	lastReports sync.Map
 	limit       time.Duration
 }
 
-// 3. CAMBIADO: El primer argumento ahora recibe la interfaz 'ReportRepository'
-func NewReportHandler(repo ReportRepository, userRepo *database.UserRepository, queue chan<- models.AlertMessage) *ReportHandler {
+func NewReportHandler(repo ReportRepository, userRepo ports.UserRepository, queue chan<- models.AlertMessage) *ReportHandler {
 	return &ReportHandler{
 		Repo:       repo,
 		UserRepo:   userRepo,
