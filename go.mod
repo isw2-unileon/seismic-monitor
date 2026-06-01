@@ -1,6 +1,6 @@
 module seismic-monitor
 
-go 1.24.0
+go 1.24
 
 require (
 	github.com/gin-gonic/gin v1.10.0
@@ -67,4 +67,3 @@ require (
 	google.golang.org/grpc v1.80.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-)
