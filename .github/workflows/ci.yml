@@ -33,7 +33,7 @@ jobs:
       - name: Setup Golang
         uses: actions/setup-go@v5
         with:
-          go-version: "1.24"
+          go-version-file: go.mod
           cache: true
 
       - name: Install PostgreSQL Client
@@ -59,10 +59,12 @@ jobs:
         uses: golangci/golangci-lint-action@v6
         with:
           version: latest
-          args: ./backend/...
+          install-mode: goinstall
+          args: --timeout=5m ./backend/...
 
       - name: Run Unit and Integration Tests
         env:
+          CGO_ENABLED: 1
           DB_HOST: localhost
           DB_PORT: 5432
           DB_USER: testuser
