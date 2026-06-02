@@ -1,6 +1,7 @@
 package ingest
 
 import (
+	"sync"
 	"testing"
 	"time"
 
@@ -18,24 +19,42 @@ func (m *MockEarthquakeProvider) GetEarthquakes() (models.USGSResponse, error) {
 
 // --- 2. MOCK DEL MOTOR ESPACIAL ---
 type MockSpatialRepository struct {
+	mu     sync.Mutex
 	Called bool
 }
 
 func (m *MockSpatialRepository) GetAffectedUsers(sismo models.Feature) ([]models.User, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.Called = true
 	return []models.User{
 		{ID: "1", Email: "usuarioA@test.com"},
 	}, nil
 }
 
+func (m *MockSpatialRepository) WasCalled() bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.Called
+}
+
 // --- 3. MOCK DEL REPOSITORIO DE SISMOS (BASE DE DATOS) ---
 type MockEarthquakeRepository struct {
+	mu         sync.Mutex
 	SavedCount int
 }
 
 func (m *MockEarthquakeRepository) SaveEarthquake(sismo models.Feature) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.SavedCount++
 	return nil
+}
+
+func (m *MockEarthquakeRepository) GetSavedCount() int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.SavedCount
 }
 
 func (m *MockEarthquakeRepository) GetEarthquakesSince(since time.Time) ([]models.Feature, error) {
@@ -79,11 +98,11 @@ func TestIngestionWorker_Process(t *testing.T) {
 		stopChan <- true // Detenemos el worker
 
 		// VERIFICACIONES
-		if !spatialMock.Called {
+		if !spatialMock.WasCalled() {
 			t.Error("El worker no consultó los usuarios afectados en el repositorio espacial")
 		}
 
-		if dbMock.SavedCount == 0 {
+		if dbMock.GetSavedCount() == 0 {
 			t.Error("El worker no guardó el sismo en la base de datos")
 		}
 
@@ -123,8 +142,8 @@ func TestIngestionWorker_Process(t *testing.T) {
 
 		// VERIFICACIONES DE ROBUSTEZ
 		// Aunque el ticker pasó varias veces, gracias al mapa `processedIDs` solo debió guardarse UNA vez.
-		if dbMock.SavedCount > 1 {
-			t.Errorf("Error de duplicación: El sismo se guardó %d veces en la BD, se esperaba solo 1", dbMock.SavedCount)
+		if dbMock.GetSavedCount() > 1 {
+			t.Errorf("Error de duplicación: El sismo se guardó %d veces en la BD, se esperaba solo 1", dbMock.GetSavedCount())
 		}
 
 		if len(alertQueue) > 1 {

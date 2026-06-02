@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
 	"time"
 
@@ -19,23 +20,47 @@ import (
 // para que el test no dependa de redes externas terceras.
 
 type E2ESMTPMock struct {
+	mu           sync.Mutex
 	EmailEnviado bool
 	EmailDestino string
 }
 
 func (m *E2ESMTPMock) SendAlert(u models.User, s models.Feature) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.EmailEnviado = true
 	m.EmailDestino = u.Email
 	return nil
 }
 
+func (m *E2ESMTPMock) IsEmailEnviado() bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.EmailEnviado
+}
+
+func (m *E2ESMTPMock) GetEmailDestino() string {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.EmailDestino
+}
+
 type E2EReportRepoMock struct {
+	mu         sync.Mutex
 	LastReport models.UserReport
 }
 
 func (m *E2EReportRepoMock) RegisterReport(r models.UserReport) (int, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.LastReport = r
 	return 5, nil // Simulamos que con este ya van 5 reportes en la zona (Umbral de pánico superado)
+}
+
+func (m *E2EReportRepoMock) GetLastReport() models.UserReport {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.LastReport
 }
 
 func Test_E2E_UserReportToNotificationFlow(t *testing.T) {
@@ -109,12 +134,12 @@ func Test_E2E_UserReportToNotificationFlow(t *testing.T) {
 	time.Sleep(50 * time.Millisecond)
 
 	// Verificación C: Comprobamos si el circuito de fondo funcionó y el email terminó enviándose
-	if !smtpMock.EmailEnviado {
+	if !smtpMock.IsEmailEnviado() {
 		t.Error("FALLO E2E: El reporte entró por HTTP pero la notificación jamás llegó al SMTP Worker")
 	}
 
-	if smtpMock.EmailDestino != "ciudadano_alerta@gmail.com" {
-		t.Errorf("FALLO E2E: El correo se desvió. Llegó a %s", smtpMock.EmailDestino)
+	if smtpMock.GetEmailDestino() != "ciudadano_alerta@gmail.com" {
+		t.Errorf("FALLO E2E: El correo se desvió. Llegó a %s", smtpMock.GetEmailDestino())
 	}
 }
 
