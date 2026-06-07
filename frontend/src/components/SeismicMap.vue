@@ -72,33 +72,42 @@ const renderAllCenters = () => {
 const confirmLocation = async () => {
   if (!pendingLocation.value) return
   const { centers } = loadUserCenters()
+  
+  let newId = Date.now() // Fallback ID
+  const data = JSON.parse(localStorage.getItem('user_data') || '{}')
+  
+  try {
+    const response = await apiService.addUserLocation({
+      latitude: pendingLocation.value.lat,
+      longitude: pendingLocation.value.lng,
+      alert_radius: tempRadius.value,
+      min_magnitude: tempMagnitude.value
+    })
+    if (response && response.id) {
+      newId = response.id
+    }
+  } catch (error) {
+    console.error("Error sincronizando con el servidor:", error)
+  }
+
   const newCenter = {
-    id: Date.now(),
+    id: newId,
     lat: pendingLocation.value.lat,
     lng: pendingLocation.value.lng,
     radius: tempRadius.value,
     min_magnitude: tempMagnitude.value
   }
-  const data = JSON.parse(localStorage.getItem('user_data') || '{}')
+
+
   data.alert_centers = [...centers, newCenter]
   data.alert_radius_km = tempRadius.value 
   data.min_magnitude = tempMagnitude.value
   localStorage.setItem('user_data', JSON.stringify(data))
   
-  try {
-    await apiService.updateUserSettings({
-      latitude: newCenter.lat,
-      longitude: newCenter.lng,
-      alert_radius: newCenter.radius,
-      min_magnitude: newCenter.min_magnitude
-    })
-  } catch (error) {
-    console.error("Error sincronizando con el servidor:", error)
-  }
-
   cancelLocation() 
   renderAllCenters()
 }
+
 
 const cancelLocation = () => {
   tempLayer.clearLayers()
@@ -280,8 +289,18 @@ onMounted(() => {
   setTimeout(() => mapInstance.value.invalidateSize(), 250)
 })
 
-const deleteCenter = () => {
+const deleteCenter = async () => {
   if (!selectedMarkerId.value) return
+  
+  try {
+    // Si el ID es un string (UUID de la BD), lo eliminamos en el servidor
+    if (typeof selectedMarkerId.value === 'string') {
+      await apiService.deleteUserLocation(selectedMarkerId.value)
+    }
+  } catch (error) {
+    console.error("Error al eliminar en el servidor:", error)
+  }
+
   const data = JSON.parse(localStorage.getItem('user_data') || '{}')
   data.alert_centers = (data.alert_centers || []).filter(c => c.id !== selectedMarkerId.value)
   localStorage.setItem('user_data', JSON.stringify(data))
@@ -289,6 +308,7 @@ const deleteCenter = () => {
   showDeleteConfirm.value = false
   renderAllCenters()
 }
+
 
 onUnmounted(() => { 
   if (resizeListener) window.removeEventListener('resize', resizeListener)

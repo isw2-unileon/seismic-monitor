@@ -23,14 +23,14 @@ onMounted(() => {
     userData.value = {
       ...userData.value,
       ...parsed,
+      // Map backend 'alert_radius' to frontend 'alert_radius_km' if needed
+      alert_radius_km: parsed.alert_radius || parsed.alert_radius_km || 100,
       alert_centers: parsed.alert_centers || []
     }
   }
 })
 
 const saveSettings = async () => {
-  localStorage.setItem('user_data', JSON.stringify(userData.value))
-  
   try {
     // If there are centers, we use the last one for the backend location
     const lastCenter = userData.value.alert_centers.length > 0 
@@ -38,22 +38,34 @@ const saveSettings = async () => {
       : { lat: userData.value.latitude, lng: userData.value.longitude, radius: userData.value.alert_radius_km }
 
     await apiService.updateUserSettings({
+      name: userData.value.name,
       latitude: lastCenter.lat,
       longitude: lastCenter.lng,
       alert_radius: lastCenter.radius || userData.value.alert_radius_km,
       min_magnitude: userData.value.min_magnitude
     })
+
+    // Save to localStorage ONLY after successful server update
+    localStorage.setItem('user_data', JSON.stringify(userData.value))
     alert('Preferences updated and synchronized')
   } catch (error) {
     console.error("Error synchronizing settings:", error)
-    alert('Preferences saved locally, but error synchronizing with the server')
+    alert('Error synchronizing with the server: ' + error.message)
   }
 }
 
-const removeCenter = (id) => {
+const removeCenter = async (id) => {
+  try {
+    if (typeof id === 'string') {
+      await apiService.deleteUserLocation(id)
+    }
+  } catch (error) {
+    console.error("Error deleting center:", error)
+  }
   userData.value.alert_centers = userData.value.alert_centers.filter(c => c.id !== id)
   saveSettings()
 }
+
 
 const goBack = () => router.push({ name: 'map' })
 </script>

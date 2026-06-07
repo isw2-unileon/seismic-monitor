@@ -125,5 +125,50 @@ export const apiService = {
     }
 
     return await response.json();
+  },
+
+  /**
+   * Adds a new user alert center.
+   * @param {Object} data - { latitude, longitude, alert_radius }
+   */
+  async addUserLocation(data) {
+    const token = localStorage.getItem('auth_token');
+    const response = await fetch('/api/v1/users/location', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(data)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || "Failed to add location");
+    }
+
+    return await response.json();
+  },
+
+  /**
+   * Deletes a user alert center.
+
+   * @param {string} centerId 
+   */
+  async deleteUserLocation(centerId) {
+    const token = localStorage.getItem('auth_token');
+    const response = await fetch(`/api/v1/users/location/${centerId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || "Failed to delete location");
+    }
+
+    return await response.json();
   }
 };
