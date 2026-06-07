@@ -76,13 +76,17 @@ const confirmLocation = async () => {
   let newId = Date.now() // Fallback ID
   const data = JSON.parse(localStorage.getItem('user_data') || '{}')
   
+  const payload = {
+    latitude: pendingLocation.value.lat,
+    longitude: pendingLocation.value.lng,
+    alert_radius: tempRadius.value,
+    min_magnitude: tempMagnitude.value
+  }
+  console.log("Adding new alert center. Payload:", payload)
+
   try {
-    const response = await apiService.addUserLocation({
-      latitude: pendingLocation.value.lat,
-      longitude: pendingLocation.value.lng,
-      alert_radius: tempRadius.value,
-      min_magnitude: tempMagnitude.value
-    })
+    const response = await apiService.addUserLocation(payload)
+    console.log("Response from server:", response)
     if (response && response.id) {
       newId = response.id
     }

@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"seismic-monitor/backend/internal/models"
@@ -22,7 +23,7 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 
 // CreateUser inserta un nuevo usuario en la base de datos
 func (r *UserRepository) CreateUser(user *models.User) error {
-	query := `INSERT INTO users (username, email, password_hash, location, alert_radius_km, min_magnitude_alert, created_at) VALUES ($1, $2, $3, ST_SetSRID(ST_MakePoint($4, $5), 4326), $6, $7, $8) RETURNING id`
+	query := `INSERT INTO users (username, email, password_hash, location, alert_radius_km, min_magnitude_alert, created_at) VALUES ($1, $2, $3, ST_SetSRID(ST_MakePoint($4, $5), 4326)::geography, $6, $7, $8) RETURNING id`
 
 	user.CreatedAt = time.Now()
 	// Si el nombre viene vacío, usamos el email como username por defecto
@@ -50,9 +51,6 @@ func (r *UserRepository) FindUserByEmail(email string) (*models.User, error) {
 		return nil, fmt.Errorf("error al buscar usuario por email: %w", err)
 	}
 
-
-
-
 	// Buscar sus centros de alerta adicionales
 	centers, err := r.GetUserAlertCenters(user.ID)
 	if err == nil {
@@ -64,7 +62,7 @@ func (r *UserRepository) FindUserByEmail(email string) (*models.User, error) {
 
 // GetUserAlertCenters recupera todos los centros de alerta de un usuario
 func (r *UserRepository) GetUserAlertCenters(userID string) ([]models.AlertCenter, error) {
-	query := `SELECT id, ST_Y(location::geometry) as lat, ST_X(location::geometry) as lng, alert_radius_km, min_magnitude_alert FROM user_locations WHERE user_id = $1`
+	query := `SELECT id, ST_Y(location::geometry) as lat, ST_X(location::geometry) as lng, alert_radius_km, min_magnitude_alert FROM user_locations WHERE user_id = $1::uuid`
 	rows, err := r.DB.Query(query, userID)
 	if err != nil {
 		return nil, fmt.Errorf("error al obtener centros de alerta: %w", err)
@@ -85,41 +83,49 @@ func (r *UserRepository) GetUserAlertCenters(userID string) ([]models.AlertCente
 
 // DeleteUserAlertCenter elimina un centro de alerta específico
 func (r *UserRepository) DeleteUserAlertCenter(userID, centerID string) error {
-	query := `DELETE FROM user_locations WHERE id = $1 AND user_id = $2`
+	query := `DELETE FROM user_locations WHERE id = $1::uuid AND user_id = $2::uuid`
 	res, err := r.DB.Exec(query, centerID, userID)
 	if err != nil {
+		slog.Error("Database error in DeleteUserAlertCenter", "error", err, "userID", userID, "centerID", centerID)
 		return fmt.Errorf("error al eliminar centro de alerta de la BD: %w", err)
 	}
 	rows, _ := res.RowsAffected()
 	if rows == 0 {
 		return fmt.Errorf("no se encontró la ubicación con ID %s para el usuario %s", centerID, userID)
 	}
+	slog.Info("Alert center deleted from DB", "id", centerID, "userID", userID)
 	return nil
 }
 
 // AddUserAlertCenter añade una nueva zona de interés para el usuario
 func (r *UserRepository) AddUserAlertCenter(userID string, latitude, longitude, radius, minMagnitude float64) (string, error) {
 	var newID string
-	query := `INSERT INTO user_locations (user_id, location, alert_radius_km, min_magnitude_alert) VALUES ($1, ST_SetSRID(ST_MakePoint($2, $3), 4326), $4, $5) RETURNING id`
+	query := `INSERT INTO user_locations (user_id, location, alert_radius_km, min_magnitude_alert) VALUES ($1::uuid, ST_SetSRID(ST_MakePoint($2, $3), 4326)::geography, $4, $5) RETURNING id`
 	err := r.DB.QueryRow(query, userID, longitude, latitude, radius, minMagnitude).Scan(&newID)
 	if err != nil {
+		slog.Error("Database error in AddUserAlertCenter", "error", err, "userID", userID, "lat", latitude, "lng", longitude)
 		return "", fmt.Errorf("error al añadir centro de alerta: %w", err)
 	}
+	slog.Info("Alert center added to DB", "id", newID, "userID", userID)
 	return newID, nil
 }
 
 // UpdateUserLocation actualiza el nombre, la posición y radio de alerta principal de un usuario.
 func (r *UserRepository) UpdateUserLocation(userID string, name string, latitude, longitude, alertRadius, minMagnitude float64) error {
 	// 1. Actualizar el perfil principal del usuario
-	query := `UPDATE users SET username = $1, location = ST_SetSRID(ST_MakePoint($2, $3), 4326), alert_radius_km = $4, min_magnitude_alert = $5 WHERE id = $6`
-	_, err := r.DB.Exec(query, name, longitude, latitude, alertRadius, minMagnitude, userID)
+	query := `UPDATE users SET username = $1, location = ST_SetSRID(ST_MakePoint($2, $3), 4326)::geography, alert_radius_km = $4, min_magnitude_alert = $5 WHERE id = $6::uuid`
+	res, err := r.DB.Exec(query, name, longitude, latitude, alertRadius, minMagnitude, userID)
 	if err != nil {
+		slog.Error("Database error in UpdateUserLocation", "error", err, "userID", userID, "name", name)
 		return fmt.Errorf("error al actualizar el perfil del usuario: %w", err)
 	}
+	rows, _ := res.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("no se encontró al usuario con ID %s", userID)
+	}
+	slog.Info("User profile updated in DB", "userID", userID, "rowsAffected", rows)
 	return nil
 }
-
-
 
 // HashPassword genera un hash bcrypt de la contraseña
 func HashPassword(password string) (string, error) {
@@ -152,8 +158,6 @@ func (r *UserRepository) GetAffectedUsers(sismo models.Feature) ([]models.User, 
 	if len(sismo.Geometry.Coordinates) < 2 {
 		return nil, fmt.Errorf("no se pueden calcular usuarios afectados: el sismo no tiene coordenadas válidas")
 	}
-
-
 
 	lon := sismo.Geometry.Coordinates[0]
 	lat := sismo.Geometry.Coordinates[1]

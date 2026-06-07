@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
 
 	"seismic-monitor/backend/internal/database"
@@ -29,12 +30,16 @@ func (h *UserHandler) UpdateLocation(c *gin.Context) {
 
 	var req models.UpdateLocationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		slog.Error("Error binding JSON in UpdateLocation", "error", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "datos de ubicación inválidos"})
 		return
 	}
 
+	slog.Info("Updating user profile", "userID", userID, "name", req.Name, "lat", *req.Latitude, "lng", *req.Longitude)
+
 	err := h.Repo.UpdateUserLocation(userID.(string), req.Name, *req.Latitude, *req.Longitude, *req.AlertRadius, *req.MinMagnitude)
 	if err != nil {
+		slog.Error("Error updating user profile in DB", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al actualizar el perfil"})
 		return
 	}
@@ -54,9 +59,12 @@ func (h *UserHandler) AddLocation(c *gin.Context) {
 
 	var req models.UpdateLocationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		slog.Error("Error binding JSON in AddLocation", "error", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "datos de ubicación inválidos"})
 		return
 	}
+
+	slog.Info("Adding alert center", "userID", userID, "lat", *req.Latitude, "lng", *req.Longitude)
 
 	// Usamos el min_magnitude del request si existe, si no 3.0 por defecto
 	minMag := 3.0
@@ -66,6 +74,7 @@ func (h *UserHandler) AddLocation(c *gin.Context) {
 
 	newID, err := h.Repo.AddUserAlertCenter(userID.(string), *req.Latitude, *req.Longitude, *req.AlertRadius, minMag)
 	if err != nil {
+		slog.Error("Error adding alert center in DB", "error", err, "userID", userID)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al añadir la ubicación"})
 		return
 	}
@@ -99,6 +108,3 @@ func (h *UserHandler) DeleteLocation(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "ubicación eliminada correctamente"})
 }
-
-
-
