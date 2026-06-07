@@ -52,6 +52,7 @@ jobs:
             DB_URL=$(grep '^DATABASE_URL=' /opt/seismic-monitor/.env | cut -d '=' -f2- | tr -d '"'\''')
             # Ejecutar psql usando un contenedor temporal. Si falla, se detendrá el despliegue para ver el error
             docker run --rm -i postgis/postgis:15-3.3 psql "$DB_URL" < /opt/seismic-monitor/backend/migrations/000001_init_schema.up.sql
+            docker run --rm -i postgis/postgis:15-3.3 psql "$DB_URL" < /opt/seismic-monitor/backend/migrations/000002_add_min_magnitude_alert.up.sql
 
             # Levantar el nuevo contenedor
             # en la ruta /opt/seismic-monitor/.env con la DATABASE_URL, SMTP, etc.

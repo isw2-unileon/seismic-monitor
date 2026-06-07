@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS user_locations (
     label VARCHAR(100), -- Opcional: "Casa", "Trabajo", etc.
     location GEOGRAPHY(POINT, 4326) NOT NULL,
     alert_radius_km NUMERIC NOT NULL DEFAULT 50,
+    min_magnitude_alert NUMERIC(3,1) NOT NULL DEFAULT 3.0,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
