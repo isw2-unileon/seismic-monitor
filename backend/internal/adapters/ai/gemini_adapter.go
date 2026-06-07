@@ -3,10 +3,10 @@ package ai
 import (
 	"context"
 	"fmt"
+	"log"
 	"seismic-monitor/backend/internal/models"
 
-	"github.com/google/generative-ai-go/genai"
-	"google.golang.org/api/option"
+	"google.golang.org/genai"
 )
 
 type GeminiAdapter struct {
@@ -14,13 +14,14 @@ type GeminiAdapter struct {
 }
 
 func (a *GeminiAdapter) GenerateSafetyAdvice(ctx context.Context, sismo models.Feature) (string, error) {
-	client, err := genai.NewClient(ctx, option.WithAPIKey(a.APIKey))
+	client, err := genai.NewClient(ctx, &genai.ClientConfig{
+		APIKey:  a.APIKey,
+		Backend: genai.BackendGeminiAPI,
+	})
 	if err != nil {
+		log.Printf("[Gemini Adapter] Error inicializando cliente: %v", err)
 		return "", err
 	}
-	defer client.Close()
-
-	model := client.GenerativeModel("gemini-1.5-flash")
 
 	depth := 0.0
 	if len(sismo.Geometry.Coordinates) >= 3 {
@@ -33,15 +34,14 @@ func (a *GeminiAdapter) GenerateSafetyAdvice(ctx context.Context, sismo models.F
 		sismo.Info.Place, sismo.Info.Mag, depth,
 	)
 
-	resp, err := model.GenerateContent(ctx, genai.Text(prompt))
+	resp, err := client.Models.GenerateContent(ctx, "gemini-2.5-flash", genai.Text(prompt), nil)
 	if err != nil {
+		log.Printf("[⚠️ Gemini API Error] Fallo al generar contenido: %v", err)
 		return "Mantente en un lugar seguro y sigue las instrucciones de las autoridades locales.", nil
 	}
 
 	if resp != nil && len(resp.Candidates) > 0 && resp.Candidates[0].Content != nil && len(resp.Candidates[0].Content.Parts) > 0 {
-		if part, ok := resp.Candidates[0].Content.Parts[0].(genai.Text); ok {
-			return string(part), nil
-		}
+		return resp.Candidates[0].Content.Parts[0].Text, nil
 	}
 
 	return "Sin consejos adicionales disponibles en este momento.", nil

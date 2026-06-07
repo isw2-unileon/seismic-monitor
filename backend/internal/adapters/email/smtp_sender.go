@@ -47,7 +47,11 @@ func (s *SMTPSender) SendAlert(user models.User, sismo models.Feature) error {
 
 	message := []byte(messageStr)
 
-	auth := smtp.PlainAuth("", s.Username, s.Password, s.Host)
+	var auth smtp.Auth
+	if s.Username != "" && s.Password != "" {
+		auth = smtp.PlainAuth("", s.Username, s.Password, s.Host)
+	}
+
 	addr := fmt.Sprintf("%s:%s", s.Host, s.Port)
 
 	err := smtp.SendMail(addr, auth, from, to, message)
