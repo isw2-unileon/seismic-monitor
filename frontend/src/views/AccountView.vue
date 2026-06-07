@@ -31,19 +31,23 @@ onMounted(() => {
 })
 
 const saveSettings = async () => {
+  console.log("Saving user settings:", userData.value)
   try {
     // If there are centers, we use the last one for the backend location
     const lastCenter = userData.value.alert_centers.length > 0 
       ? userData.value.alert_centers[userData.value.alert_centers.length - 1]
       : { lat: userData.value.latitude, lng: userData.value.longitude, radius: userData.value.alert_radius_km }
 
-    await apiService.updateUserSettings({
+    const payload = {
       name: userData.value.name,
       latitude: lastCenter.lat,
       longitude: lastCenter.lng,
       alert_radius: lastCenter.radius || userData.value.alert_radius_km,
       min_magnitude: userData.value.min_magnitude
-    })
+    }
+    console.log("Sending payload to backend:", payload)
+
+    await apiService.updateUserSettings(payload)
 
     // Save to localStorage ONLY after successful server update
     localStorage.setItem('user_data', JSON.stringify(userData.value))
