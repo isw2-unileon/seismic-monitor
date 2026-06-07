@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -45,7 +46,7 @@ func (r *UserRepository) FindUserByEmail(email string) (*models.User, error) {
 	query := `SELECT id, email, username, password_hash, ST_Y(location::geometry) as latitude, ST_X(location::geometry) as longitude, alert_radius_km, min_magnitude_alert, created_at FROM users WHERE email = $1`
 	err := r.DB.QueryRow(query, email).Scan(&user.ID, &user.Email, &user.Name, &user.PasswordHash, &user.Latitude, &user.Longitude, &user.AlertRadius, &user.MinMagnitude, &user.CreatedAt)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil // Usuario no encontrado
 	} else if err != nil {
 		return nil, fmt.Errorf("error al buscar usuario por email: %w", err)
