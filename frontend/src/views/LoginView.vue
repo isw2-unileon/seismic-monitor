@@ -31,7 +31,7 @@ const handleLogin = async () => {
       // Store the JWT to satisfy the Navigation Guard
       localStorage.setItem('auth_token', response.token)
       
-      // Store non-sensitive user data for UI purposes (like the alert radius)
+      // Store non-sensitive user data for UI purposes
       localStorage.setItem('user_data', JSON.stringify(response.user))
 
       router.push({ name: 'map' })
