@@ -44,7 +44,10 @@ func main() {
 		fmt.Println("\nColumns in user_locations:")
 		for rows.Next() {
 			var name, dtype string
-			rows.Scan(&name, &dtype)
+			if err := rows.Scan(&name, &dtype); err != nil {
+			fmt.Println("Error al escanear fila:", err)
+			continue
+		}
 			fmt.Printf("- %s (%s)\n", name, dtype)
 		}
 		rows.Close()
