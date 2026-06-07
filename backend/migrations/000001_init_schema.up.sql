@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS earthquake (
 
 -- 4. Create reported earthquakes table for user-reported events
 CREATE TABLE reported_earthquakes (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    reported_earthquake_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     location GEOGRAPHY(POINT, 4326) NOT NULL,
     reported_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );

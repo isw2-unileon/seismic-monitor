@@ -47,6 +47,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 	user := &models.User{
 		Email:        req.Email,
+		Name:         req.Email, // Usamos el email como nombre inicial
 		PasswordHash: hashed,
 		AlertRadius:  100, // Valor por defecto en km
 		MinMagnitude: 3.0, // Valor por defecto de magnitud
@@ -91,9 +92,13 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		"token": token,
 		"user": gin.H{
 			"email":         user.Email,
+			"name":          user.Name,
 			"id":            user.ID,
 			"alert_radius":  user.AlertRadius,
 			"min_magnitude": user.MinMagnitude,
+			"latitude":      user.Latitude,
+			"longitude":     user.Longitude,
+			"alert_centers": user.AlertCenters,
 		},
 	})
 }

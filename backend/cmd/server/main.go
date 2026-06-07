@@ -99,6 +99,8 @@ func main() {
 		protected.Use(middleware.AuthMiddleware(jwtService))
 		{
 			protected.PUT("/users/location", userHandler.UpdateLocation)
+			protected.POST("/users/location", userHandler.AddLocation)
+			protected.DELETE("/users/location/:id", userHandler.DeleteLocation)
 		}
 	}
 
