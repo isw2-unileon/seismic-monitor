@@ -9,7 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// AuthMiddleware verifica el token JWT en el header Authorization
 func AuthMiddleware(jwtService *auth.JWTService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
@@ -19,7 +18,7 @@ func AuthMiddleware(jwtService *auth.JWTService) gin.HandlerFunc {
 			return
 		}
 
-		// El header suele ser "Bearer <token>"
+		// The header is usually "Bearer <token>"
 		parts := strings.Split(authHeader, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "formato de token inválido"})
@@ -35,7 +34,6 @@ func AuthMiddleware(jwtService *auth.JWTService) gin.HandlerFunc {
 			return
 		}
 
-		// Guardar el UserID en el contexto para usarlo en los handlers
 		c.Set("userID", claims.UserID)
 		c.Next()
 	}

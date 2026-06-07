@@ -15,7 +15,6 @@ func NewEarthquakeRepository(db *sql.DB) *EarthquakeRepository {
 	return &EarthquakeRepository{DB: db}
 }
 
-// GetFilteredEarthquakes obtiene sismos filtrados por magnitud mínima y límite
 func (r *EarthquakeRepository) GetFilteredEarthquakes(minMag float64, limit int) ([]models.Feature, error) {
 	query := `
 		SELECT usgs_id, richter_scale, place_name, ocurred_at, ST_X(location::geometry), ST_Y(location::geometry), depth_km 
@@ -47,7 +46,7 @@ func (r *EarthquakeRepository) GetFilteredEarthquakes(minMag float64, limit int)
 	return earthquakes, nil
 }
 
-// SaveEarthquake inserta o actualiza un sismo (Upsert)
+
 func (r *EarthquakeRepository) SaveEarthquake(eq models.Feature) error {
 	query := `
 		INSERT INTO earthquake (usgs_id, richter_scale, place_name, ocurred_at, location, depth_km)

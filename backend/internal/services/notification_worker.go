@@ -8,7 +8,6 @@ import (
 	"time"
 )
 
-// StartNotificationWorker escucha la cola y envía los correos
 func StartNotificationWorker(
 	ctx context.Context,
 	alertQueue <-chan models.AlertMessage,

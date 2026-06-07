@@ -21,7 +21,6 @@ func (s *EarthquakeService) GetRecentEarthquakes() ([]models.Feature, error) {
 }
 
 func (s *EarthquakeService) GetHistory() ([]models.Feature, error) {
-	// Return earthquakes from the last hour for history
 	oneHourAgo := time.Now().Add(-1 * time.Hour)
 	return s.repo.GetEarthquakesSince(oneHourAgo)
 }

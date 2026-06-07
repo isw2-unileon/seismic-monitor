@@ -1,4 +1,3 @@
-// Package main is the entry point for the backend server.
 package main
 
 import (
@@ -35,7 +34,6 @@ func main() {
 
 	logger.Info("Intentando conectar a la BD...", "url", cfg.DatabaseURL)
 
-	// 1. Inicializar la conexión a la base de datos
 	db, err := database.Connect(cfg.DatabaseURL)
 	if err != nil {
 		logger.Error("No se pudo conectar a la base de datos", "error", err)
@@ -44,17 +42,15 @@ func main() {
 	defer db.Close()
 	logger.Info("Conexión a PostgreSQL establecida con éxito")
 
-	// 1. Creamos la "Cola" en memoria (buffer de 100 mensajes)
+
 	alertQueue := make(chan models.AlertMessage, 100)
 
-	// 2. Inicializar repositorios y servicios
 	userRepo := database.NewUserRepository(db)
 	earthquakeRepo := database.NewEarthquakeRepository(db)
 	earthquakeService := services.NewEarthquakeService(earthquakeRepo)
 	jwtService := auth.NewJWTService(cfg.JWTSecret)
 	reportRepo := &database.ReportRepository{DB: db}
 
-	// 3. Inicializar handlers
 	authHandler := handlers.NewAuthHandler(userRepo, jwtService)
 	userHandler := handlers.NewUserHandler(userRepo)
 	earthquakeHandler := handlers.NewEarthquakeHandler(earthquakeService)
@@ -66,7 +62,7 @@ func main() {
 		reportHandler := &handlers.ReportHandler{
 			Repo:       reportRepo,
 			UserRepo:   userRepo,
-			AlertQueue: alertQueue, // La misma cola que usa el worker de Mailtrap
+			AlertQueue: alertQueue, // The same queue used by the Mailtrap worker
 		}
 	*/
 	reportHandler := handlers.NewReportHandler(reportRepo, userRepo, alertQueue)
@@ -76,7 +72,7 @@ func main() {
 	r := gin.New()
 	r.Use(gin.Logger(), gin.Recovery())
 
-	// Habilitar CORS si es necesario (puedes añadir middleware aquí más tarde)
+
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
@@ -84,7 +80,6 @@ func main() {
 
 	apiV1 := r.Group("/api/v1")
 	{
-		// Rutas públicas
 		apiV1.GET("/earthquakes", earthquakeHandler.GetEarthquakes)
 		apiV1.GET("/earthquakes/history", earthquakeHandler.GetHistory)
 
@@ -94,7 +89,6 @@ func main() {
 			users.POST("/login", authHandler.Login)
 		}
 
-		// Rutas protegidas
 		protected := apiV1.Group("/")
 		protected.Use(middleware.AuthMiddleware(jwtService))
 		{

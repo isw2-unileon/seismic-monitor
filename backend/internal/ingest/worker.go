@@ -13,7 +13,7 @@ type IngestionWorker struct {
 	spatialRepo    ports.SpatialRepository
 	earthquakeRepo ports.EarthquakeRepository
 	alertQueue     chan<- models.AlertMessage
-	processedIDs   map[string]bool // NUEVO: Mapa para almacenar los IDs de sismos ya procesados
+	processedIDs   map[string]bool // NEW: Map to store already processed earthquake IDs
 }
 
 func NewIngestionWorker(
@@ -29,11 +29,10 @@ func NewIngestionWorker(
 		spatialRepo:    spatialRepo,
 		earthquakeRepo: earthquakeRepo,
 		alertQueue:     alertQueue,
-		processedIDs:   make(map[string]bool), // NUEVO: Inicializamos el mapa
+		processedIDs:   make(map[string]bool), // NEW: Initialize the map
 	}
 }
 
-// NUEVO: Método privado que contiene la lógica que antes estaba en el select
 func (w *IngestionWorker) processEarthquakes() {
 	response, err := w.provider.GetEarthquakes()
 	if err != nil {
@@ -41,27 +40,24 @@ func (w *IngestionWorker) processEarthquakes() {
 		return
 	}
 
-	nuevosGuardados := 0 // Contador para saber cuántos metemos en esta pasada
+	newlySaved := 0 // Counter to know how many we insert in this pass
 
 	for _, sismo := range response.Features {
 
-		// 1. ¿Ya hemos visto este sismo en esta sesión? Si es así, lo ignoramos.
+		// Have we already seen this earthquake in this session? If so, ignore it.
 		if w.processedIDs[sismo.ID] {
 			continue
 		}
 
-		// 2. Guardamos en Base de Datos
 		err := w.earthquakeRepo.SaveEarthquake(sismo)
 		if err != nil {
 			log.Printf("[Worker] Aviso al guardar sismo %s: %v", sismo.ID, err)
-			continue // Si falló al guardar, mejor no mandar la alerta todavía
+			continue // If saving failed, better not to send the alert yet
 		}
 
-		// 3. Lo marcamos como procesado para la próxima vez
 		w.processedIDs[sismo.ID] = true
-		nuevosGuardados++
+		newlySaved++
 
-		// 4. Buscamos usuarios y lanzamos alertas
 		affectedUsers, _ := w.spatialRepo.GetAffectedUsers(sismo)
 		for _, user := range affectedUsers {
 			select {
@@ -75,8 +71,8 @@ func (w *IngestionWorker) processEarthquakes() {
 		}
 	}
 
-	if nuevosGuardados > 0 {
-		log.Printf("[Worker] ÉXITO: %d sismos nuevos guardados en la base de datos.", nuevosGuardados)
+	if newlySaved > 0 {
+		log.Printf("[Worker] ÉXITO: %d sismos nuevos guardados en la base de datos.", newlySaved)
 	}
 }
 
@@ -86,14 +82,13 @@ func (w *IngestionWorker) Start(stopChan <-chan bool) {
 
 	log.Printf("Motor de ingesta iniciado cada %v\n", w.interval)
 
-	// ¡LA CLAVE! Ejecutamos la carga inicial nada más arrancar
+	// THE KEY! Execute the initial load right after starting
 	log.Println("[Worker] Ejecutando carga inicial de sismos de la última hora...")
 	w.processEarthquakes()
 
 	for {
 		select {
 		case <-ticker.C:
-			// En cada tick, volvemos a llamar a la función
 			w.processEarthquakes()
 		case <-stopChan:
 			log.Println("[Worker] Deteniendo el motor de ingesta...")

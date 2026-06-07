@@ -16,14 +16,14 @@ type ReportRepository interface {
 }
 
 type ReportHandler struct {
-	Repo        ReportRepository         // 2. CAMBIADO: Antes era *database.ReportRepository, ahora usa la interfaz
-	UserRepo    *database.UserRepository // (Si quieres, en el futuro puedes hacer lo mismo con este)
+	Repo        ReportRepository         // 2. CHANGED: Previously *database.ReportRepository, now uses the interface
+	UserRepo    *database.UserRepository // (If desired, in the future this can also use an interface)
 	AlertQueue  chan<- models.AlertMessage
 	lastReports sync.Map
 	limit       time.Duration
 }
 
-// 3. CAMBIADO: El primer argumento ahora recibe la interfaz 'ReportRepository'
+// 3. CHANGED: The first argument now receives the 'ReportRepository' interface
 func NewReportHandler(repo ReportRepository, userRepo *database.UserRepository, queue chan<- models.AlertMessage) *ReportHandler {
 	return &ReportHandler{
 		Repo:       repo,
@@ -36,7 +36,7 @@ func NewReportHandler(repo ReportRepository, userRepo *database.UserRepository, 
 func (h *ReportHandler) HandleReport(c *gin.Context) {
 	userIP := c.ClientIP()
 
-	// 1. Verificar si la IP está en "enfriamiento"
+	// Check if the IP is in "cooldown"
 	if lastTime, ok := h.lastReports.Load(userIP); ok {
 		if time.Since(lastTime.(time.Time)) < h.limit {
 			c.JSON(http.StatusTooManyRequests, gin.H{
@@ -65,12 +65,11 @@ func (h *ReportHandler) HandleReport(c *gin.Context) {
 		return
 	}
 
-	// 3. Si todo ok, actualizamos el timestamp del usuario
 	h.lastReports.Store(userIP, time.Now())
 
-	// 4. Lógica de alerta masiva (solo si llegamos al umbral de 5)
+	// Mass alert logic (only if we reach the threshold of 5)
 	if count == 5 {
-		// ... (mismo código de búsqueda de usuarios y envío a la AlertQueue que ya tenemos)
+		// ... (same user search and AlertQueue sending code as before)
 	}
 
 	c.JSON(http.StatusOK, gin.H{

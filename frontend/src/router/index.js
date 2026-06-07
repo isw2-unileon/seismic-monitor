@@ -35,29 +35,25 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
-      // Intercepta URLs no válidas
       path: '/:pathMatch(.*)*',
       redirect: '/'
     }
   ]
 })
 
-// Guardia de Navegación Moderno (Vue Router v4)
-// Observa que ya no declaramos el parámetro 'next'
-router.beforeEach((to, from) => {
+// Modern Navigation Guard (Vue Router v4)
+// Note that we no longer declare the 'next' parameter
+router.beforeEach((to, _from) => {
   const isAuthenticated = !!localStorage.getItem('auth_token')
 
   if (to.meta.requiresAuth && !isAuthenticated) {
-    // Si requiere sesión y no hay token, aborta y devuelve a login
     return { name: 'login' }
   } 
   
   if (to.name === 'login' && isAuthenticated) {
-    // Si ya tiene sesión e intenta ir al login, devuélvelo al mapa
     return { name: 'map' }
   }
 
-  // Si no se cumple ninguna restricción, retorna true para permitir el paso
   return true
 })
 

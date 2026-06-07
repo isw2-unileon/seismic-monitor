@@ -19,9 +19,8 @@ func NewUserHandler(repo *database.UserRepository) *UserHandler {
 	return &UserHandler{Repo: repo}
 }
 
-// UpdateLocation permite al usuario actualizar su posición y radio de alerta
 func (h *UserHandler) UpdateLocation(c *gin.Context) {
-	// Obtener userID del contexto (puesto por el middleware)
+
 	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "no se pudo identificar al usuario"})
@@ -49,7 +48,6 @@ func (h *UserHandler) UpdateLocation(c *gin.Context) {
 	})
 }
 
-// AddLocation añade una nueva zona de interés
 func (h *UserHandler) AddLocation(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if !exists {
@@ -66,7 +64,7 @@ func (h *UserHandler) AddLocation(c *gin.Context) {
 
 	slog.Info("Adding alert center", "userID", userID, "lat", *req.Latitude, "lng", *req.Longitude)
 
-	// Usamos el min_magnitude del request si existe, si no 3.0 por defecto
+	// Use the requested min_magnitude if it exists, otherwise default to 3.0
 	minMag := 3.0
 	if req.MinMagnitude != nil {
 		minMag = *req.MinMagnitude
@@ -85,7 +83,6 @@ func (h *UserHandler) AddLocation(c *gin.Context) {
 	})
 }
 
-// DeleteLocation elimina un centro de alerta
 func (h *UserHandler) DeleteLocation(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if !exists {
@@ -100,7 +97,7 @@ func (h *UserHandler) DeleteLocation(c *gin.Context) {
 	}
 
 	if err := h.Repo.DeleteUserAlertCenter(userID.(string), centerID); err != nil {
-		// Log para depuración
+		// Log for debugging
 		fmt.Printf("Error al borrar ubicación %s: %v\n", centerID, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al eliminar la ubicación de la base de datos"})
 		return

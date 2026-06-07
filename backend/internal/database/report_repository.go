@@ -11,8 +11,7 @@ type ReportRepository struct {
 }
 
 func (r *ReportRepository) RegisterReport(report models.UserReport) (int, error) {
-	// 1. Insertamos el reporte usando la estructura de tu amigo
-	// Usamos gen_random_uuid() para el ID y ST_MakePoint para la ubicación
+	// Use gen_random_uuid() for the ID and ST_MakePoint for the location
 	insertQuery := `
 		INSERT INTO reported_earthquakes (reported_earthquake_id, location, reported_at)
 		VALUES (gen_random_uuid(), ST_SetSRID(ST_MakePoint($1, $2), 4326), NOW())
@@ -23,8 +22,8 @@ func (r *ReportRepository) RegisterReport(report models.UserReport) (int, error)
 		return 0, fmt.Errorf("error al guardar reporte: %w", err)
 	}
 
-	// 2. Calculamos el clúster: ¿Cuánta gente ha reportado en un radio de 30km
-	// en los últimos 10 minutos?
+	// Calculate the cluster: How many people have reported within a 30km radius
+	// in the last 10 minutes?
 	countQuery := `
 		SELECT COUNT(*) 
 		FROM reported_earthquakes 
@@ -40,9 +39,8 @@ func (r *ReportRepository) RegisterReport(report models.UserReport) (int, error)
 	return count, nil
 }
 
-// CleanOldReports elimina los reportes que superen el tiempo de vida especificado (ej. '1 hour')
+
 func (r *ReportRepository) CleanOldReports(interval string) (int64, error) {
-	// Query para borrar registros antiguos
 	query := fmt.Sprintf("DELETE FROM reported_earthquakes WHERE reported_at < NOW() - INTERVAL '%s'", interval)
 
 	result, err := r.DB.Exec(query)

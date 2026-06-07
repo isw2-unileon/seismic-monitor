@@ -13,7 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Mock básico para cumplir con la interfaz del repositorio de reportes
+// Basic mock to fulfill the report repository interface
 type MockReportRepo struct{}
 
 func (m *MockReportRepo) RegisterReport(r models.UserReport) (int, error) {
@@ -21,19 +21,17 @@ func (m *MockReportRepo) RegisterReport(r models.UserReport) (int, error) {
 }
 
 func TestReportAPI_Integration(t *testing.T) {
-	// Configurar Gin en modo test para no ensuciar la consola de logs
+	// Configure Gin in test mode to avoid polluting the log console
 	gin.SetMode(gin.TestMode)
 
-	// 1. Inicializar dependencias.
-	// Pasamos nil a UserRepo y AlertQueue porque al devolver conteo=1, el handler jamás los llamará.
+	// Pass nil to UserRepo and AlertQueue because returning count=1 means the handler will never call them.
 	repo := &MockReportRepo{}
 	handler := handlers.NewReportHandler(repo, nil, nil)
 
-	// 2. Configurar el servidor/enrutador de Gin simulando la app real
 	router := gin.New()
 	router.POST("/api/report-feeling", handler.HandleReport)
 
-	// --- CASO 1: Petición Válida Exitosa (200 OK) ---
+
 	t.Run("Petición válida registra reporte exitosamente", func(t *testing.T) {
 		payload := models.UserReport{
 			Longitude: -70.64827, // Santiago de Chile
@@ -43,24 +41,21 @@ func TestReportAPI_Integration(t *testing.T) {
 
 		req, _ := http.NewRequest("POST", "/api/report-feeling", bytes.NewBuffer(jsonBytes))
 		req.Header.Set("Content-Type", "application/json")
-		req.RemoteAddr = "192.168.1.10:1234" // Simulamos la IP del usuario 1
+		req.RemoteAddr = "192.168.1.10:1234" // Simulate user 1's IP
 
-		// Creamos un grabador de respuestas HTTP
 		responseRecorder := httptest.NewRecorder()
 
-		// Lanzamos la petición al enrutador
 		router.ServeHTTP(responseRecorder, req)
 
-		// Verificaciones
 		if responseRecorder.Code != http.StatusOK {
 			t.Errorf("Se esperaba código 200, se obtuvo %d", responseRecorder.Code)
 		}
 	})
 
-	// --- CASO 2: Validación de Coordenadas Erróneas (400 Bad Request) ---
+
 	t.Run("Coordenadas fuera de los límites de la Tierra devuelve 400", func(t *testing.T) {
 		payload := models.UserReport{
-			Longitude: 250.0, // Longitud imposible (> 180)
+			Longitude: 250.0, // Impossible longitude (> 180)
 			Latitude:  45.0,
 		}
 		jsonBytes, _ := json.Marshal(payload)
@@ -77,16 +72,16 @@ func TestReportAPI_Integration(t *testing.T) {
 		}
 	})
 
-	// --- CASO 3: Ataque/Abuso de Spam (429 Too Many Requests) ---
+
 	t.Run("Peticiones duplicadas desde la misma IP activan el Anti-Spam", func(t *testing.T) {
 		payload := models.UserReport{Longitude: 10.0, Latitude: 10.0}
 		jsonBytes, _ := json.Marshal(payload)
 		targetIP := "10.0.0.5"
 
-		// Primera petición de la IP 10.0.0.5 -> Debería dejarle pasar (200)
+		// First request from IP 10.0.0.5 -> Should pass (200)
 		req1, _ := http.NewRequest("POST", "/api/report-feeling", bytes.NewBuffer(jsonBytes))
 		req1.Header.Set("Content-Type", "application/json")
-		req1.RemoteAddr = targetIP + ":4422" // IP + puerto efímero de red
+		req1.RemoteAddr = targetIP + ":4422" // IP + ephemeral network port
 		w1 := httptest.NewRecorder()
 		router.ServeHTTP(w1, req1)
 
@@ -94,10 +89,10 @@ func TestReportAPI_Integration(t *testing.T) {
 			t.Fatalf("La primera petición falló inesperadamente con %d", w1.Code)
 		}
 
-		// Segunda petición INMEDIATA desde la misma IP 10.0.0.5 -> Debe bloquearse (429)
+		// IMMEDIATE second request from the same IP 10.0.0.5 -> Must be blocked (429)
 		req2, _ := http.NewRequest("POST", "/api/report-feeling", bytes.NewBuffer(jsonBytes))
 		req2.Header.Set("Content-Type", "application/json")
-		req2.RemoteAddr = targetIP + ":4423" // Misma IP, otro puerto
+		req2.RemoteAddr = targetIP + ":4423" // Same IP, different port
 		w2 := httptest.NewRecorder()
 		router.ServeHTTP(w2, req2)
 

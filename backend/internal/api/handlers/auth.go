@@ -23,7 +23,6 @@ func NewAuthHandler(repo *database.UserRepository, jwtService *auth.JWTService) 
 	}
 }
 
-// Register maneja el registro de nuevos usuarios
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req models.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -31,14 +30,12 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	// Verificar si el usuario ya existe
 	existing, _ := h.Repo.FindUserByEmail(req.Email)
 	if existing != nil {
 		c.JSON(http.StatusConflict, gin.H{"error": "el correo ya está registrado"})
 		return
 	}
 
-	// Hashear contraseña
 	hashed, err := database.HashPassword(req.Password)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al procesar la contraseña"})
@@ -47,10 +44,10 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 	user := &models.User{
 		Email:        req.Email,
-		Name:         req.Email, // Usamos el email como nombre inicial
+		Name:         req.Email, // Use the email as the initial name
 		PasswordHash: hashed,
-		AlertRadius:  100, // Valor por defecto en km
-		MinMagnitude: 3.0, // Valor por defecto de magnitud
+		AlertRadius:  100, // Default value in km
+		MinMagnitude: 3.0, // Default magnitude value
 	}
 
 	if err := h.Repo.CreateUser(user); err != nil {
@@ -63,7 +60,6 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "usuario registrado con éxito"})
 }
 
-// Login maneja la autenticación y devuelve un JWT
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req models.LoginRequest
 	if err := h.ShouldBind(c, &req); err != nil {
@@ -103,7 +99,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	})
 }
 
-// Helper para binding (evita repetir código)
+// Binding helper (avoids code repetition)
 func (h *AuthHandler) ShouldBind(c *gin.Context, obj interface{}) error {
 	return c.ShouldBindJSON(obj)
 }
