@@ -1,0 +1,1 @@
+ALTER TABLE user_locations ADD COLUMN IF NOT EXISTS min_magnitude_alert NUMERIC(3,1) NOT NULL DEFAULT 3.0;
