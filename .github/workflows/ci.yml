@@ -33,35 +33,42 @@ jobs:
       - name: Setup Golang
         uses: actions/setup-go@v5
         with:
-          go-version: "1.24"
+          go-version-file: go.mod
           cache: true
+
+      - name: Install PostgreSQL Client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
       - name: Run Database Migrations
         env:
-          # PGPASSWORD is a standard environment variable that psql reads automatically
           PGPASSWORD: testpassword
         run: |
+          # Wait for database to be ready
+          until pg_isready -h localhost -p 5432 -U testuser; do
+            echo "Waiting for database..."
+            sleep 2
+          done
           psql -h localhost -U testuser -d seismic_test -f ./backend/migrations/000001_init_schema.up.sql
       
       - name: Install and Tidy Dependencies
-        working-directory: ./backend
         run: |
           go mod tidy
           go mod download
 
-      # Execution of linter using .golangci.yml
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
           version: latest
-          working-directory: ./backend 
+          install-mode: goinstall
+          args: --timeout=5m ./backend/...
 
       - name: Run Unit and Integration Tests
-        working-directory: ./backend
         env:
+          CGO_ENABLED: 1
           DB_HOST: localhost
           DB_PORT: 5432
           DB_USER: testuser
           DB_PASSWORD: testpassword
           DB_NAME: seismic_test
-        run: go test -v -race -cover ./...
+          DATABASE_URL: postgres://testuser:testpassword@localhost:5432/seismic_test?sslmode=disable
+        run: go test -v -race -cover ./backend/...

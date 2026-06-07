@@ -3,20 +3,36 @@ package services
 import (
 	"context"
 	"seismic-monitor/backend/internal/models"
+	"sync"
 	"testing"
 	"time"
 )
 
 // MockNotificationService simula el envío de emails
 type MockNotificationService struct {
+	mu         sync.Mutex
 	SentCalled bool
 	LastSismo  models.Feature
 }
 
 func (m *MockNotificationService) SendAlert(u models.User, s models.Feature) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.SentCalled = true
 	m.LastSismo = s
 	return nil
+}
+
+func (m *MockNotificationService) WasSentCalled() bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.SentCalled
+}
+
+func (m *MockNotificationService) GetLastSismo() models.Feature {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.LastSismo
 }
 
 // MockAIProvider simula la API de Gemini
@@ -59,11 +75,11 @@ func TestStartNotificationWorker(t *testing.T) {
 	close(alertQueue)
 
 	// 4. Verificaciones (Assertions)
-	if !mockNotifier.SentCalled {
+	if !mockNotifier.WasSentCalled() {
 		t.Error("El worker debería haber llamado a SendAlert")
 	}
 
-	if mockNotifier.LastSismo.AIAdvice != "Consejo de prueba de IA" {
-		t.Errorf("Se esperaba el consejo de IA, se obtuvo: %s", mockNotifier.LastSismo.AIAdvice)
+	if mockNotifier.GetLastSismo().AIAdvice != "Consejo de prueba de IA" {
+		t.Errorf("Se esperaba el consejo de IA, se obtuvo: %s", mockNotifier.GetLastSismo().AIAdvice)
 	}
 }
