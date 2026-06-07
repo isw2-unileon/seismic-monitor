@@ -8,7 +8,6 @@ import (
 	"seismic-monitor/backend/internal/models"
 )
 
-// --- 1. MOCK DEL PROVEEDOR DE SISMOS ---
 type MockEarthquakeProvider struct {
 	Response models.USGSResponse
 }
@@ -17,7 +16,6 @@ func (m *MockEarthquakeProvider) GetEarthquakes() (models.USGSResponse, error) {
 	return m.Response, nil
 }
 
-// --- 2. MOCK DEL MOTOR ESPACIAL ---
 type MockSpatialRepository struct {
 	mu     sync.Mutex
 	Called bool
@@ -38,7 +36,7 @@ func (m *MockSpatialRepository) WasCalled() bool {
 	return m.Called
 }
 
-// --- 3. MOCK DEL REPOSITORIO DE SISMOS (BASE DE DATOS) ---
+
 type MockEarthquakeRepository struct {
 	mu         sync.Mutex
 	SavedCount int
@@ -65,15 +63,14 @@ func (m *MockEarthquakeRepository) GetFilteredEarthquakes(minMag float64, limit 
 	return []models.Feature{}, nil
 }
 
-// --- LOS TESTS ---
 
 func TestIngestionWorker_Process(t *testing.T) {
-	// Caso 1: Flujo básico feliz (Registro y alerta de sismo nuevo)
+	// Case 1: Basic happy path (Registration and alert of a new earthquake)
 	t.Run("Procesamiento exitoso de un sismo nuevo", func(t *testing.T) {
 		stopChan := make(chan bool)
 		alertQueue := make(chan models.AlertMessage, 100)
 
-		// Configuramos el mock para que devuelva un sismo único
+		// Configure the mock to return a unique earthquake
 		providerMock := &MockEarthquakeProvider{
 			Response: models.USGSResponse{
 				Features: []models.Feature{{ID: "us_test_123"}},
@@ -90,14 +87,11 @@ func TestIngestionWorker_Process(t *testing.T) {
 			alertQueue,
 		)
 
-		// Arrancamos el worker
 		go worker.Start(stopChan)
 
-		// Damos un pequeño margen de ejecución para la carga inicial y el primer tick
+		// Give a small execution margin for the initial load and the first tick
 		time.Sleep(80 * time.Millisecond)
-		stopChan <- true // Detenemos el worker
 
-		// VERIFICACIONES
 		if !spatialMock.WasCalled() {
 			t.Error("El worker no consultó los usuarios afectados en el repositorio espacial")
 		}
@@ -111,13 +105,13 @@ func TestIngestionWorker_Process(t *testing.T) {
 		}
 	})
 
-	// Caso 2: Criterio Avanzado (Filtro Anti-Duplicados)
-	// Aquí demostramos al profesor que testeamos las reglas de negocio críticas de la sesión
+	// Case 2: Advanced Criterion (Anti-Duplicate Filter)
+	// Here we demonstrate that we test the critical business rules of the session
 	t.Run("Evita duplicados si el sismo ya fue procesado en la sesión", func(t *testing.T) {
 		stopChan := make(chan bool)
 		alertQueue := make(chan models.AlertMessage, 100)
 
-		// El proveedor siempre devuelve el mismo sismo repetido
+		// The provider always returns the same repeated earthquake
 		providerMock := &MockEarthquakeProvider{
 			Response: models.USGSResponse{
 				Features: []models.Feature{{ID: "sismo_repetido_999"}},
@@ -127,7 +121,7 @@ func TestIngestionWorker_Process(t *testing.T) {
 		dbMock := &MockEarthquakeRepository{}
 
 		worker := NewIngestionWorker(
-			10*time.Millisecond, // Intervalo muy rápido para forzar múltiples pasadas (ticks)
+			10*time.Millisecond, // Very fast interval to force multiple passes (ticks)
 			providerMock,
 			spatialMock,
 			dbMock,
@@ -136,12 +130,11 @@ func TestIngestionWorker_Process(t *testing.T) {
 
 		go worker.Start(stopChan)
 
-		// Dejamos correr el tiempo suficiente para que pasen al menos 3 o 4 ticks
+		// Let enough time run for at least 3 or 4 ticks to pass
 		time.Sleep(50 * time.Millisecond)
 		stopChan <- true
 
-		// VERIFICACIONES DE ROBUSTEZ
-		// Aunque el ticker pasó varias veces, gracias al mapa `processedIDs` solo debió guardarse UNA vez.
+		// Even though the ticker passed several times, thanks to the `processedIDs` map it should only have been saved ONCE.
 		if dbMock.GetSavedCount() > 1 {
 			t.Errorf("Error de duplicación: El sismo se guardó %d veces en la BD, se esperaba solo 1", dbMock.GetSavedCount())
 		}

@@ -1,5 +1,4 @@
 import { ref } from 'vue'
-import L from 'leaflet'
 
 export function useAlertCenters() {
   const selectedMarkerId = ref(null)

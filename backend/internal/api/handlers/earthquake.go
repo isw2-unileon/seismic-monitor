@@ -19,13 +19,10 @@ func NewEarthquakeHandler(service *services.EarthquakeService) *EarthquakeHandle
 	return &EarthquakeHandler{Service: service}
 }
 
-// GetEarthquakes devuelve una FeatureCollection GeoJSON de sismos
 func (h *EarthquakeHandler) GetEarthquakes(c *gin.Context) {
-	// Filtros por defecto
 	limit := 50
 	minMag := 0.0
 
-	// Leer parámetros de la URL
 	if l, err := strconv.Atoi(c.Query("limit")); err == nil && l > 0 {
 		limit = l
 	}
@@ -33,11 +30,11 @@ func (h *EarthquakeHandler) GetEarthquakes(c *gin.Context) {
 		minMag = m
 	}
 
-	// Delegar al repositorio a través de un servicio si existiera la necesidad,
-	// por ahora podemos asumir que el servicio también tiene este método
-	// o podemos crearlo. Para mantener la interfaz original, idealmente
-	// el servicio debería exponer GetFilteredEarthquakes.
-	// Asumiremos que el Service fue actualizado para delegar o se usaba Repo antes.
+	// Delegate to the repository via a service if there was a need,
+	// for now we can assume the service also has this method
+	// or we can create it. To maintain the original interface, ideally
+	// the service should expose GetFilteredEarthquakes.
+	// We assume the Service was updated to delegate or Repo was used before.
 	earthquakes, err := h.Service.GetFilteredEarthquakes(minMag, limit)
 	if err != nil {
 		fmt.Printf("Error en GetFilteredEarthquakes: %v\n", err)
@@ -48,7 +45,7 @@ func (h *EarthquakeHandler) GetEarthquakes(c *gin.Context) {
 	features := make([]models.Feature, len(earthquakes))
 	for i := range earthquakes {
 		earthquakes[i].Type = "Feature"
-		// Estructura compatible con FeatureCollection de GeoJSON
+		// GeoJSON FeatureCollection compatible structure
 		features[i] = earthquakes[i]
 	}
 
@@ -58,13 +55,12 @@ func (h *EarthquakeHandler) GetEarthquakes(c *gin.Context) {
 	}
 
 	if response.Features == nil {
-		response.Features = []models.Feature{} // Evitar null en JSON
+		response.Features = []models.Feature{} // Avoid null in JSON
 	}
 
 	c.JSON(http.StatusOK, response)
 }
 
-// GetHistory devuelve los sismos de la última hora
 func (h *EarthquakeHandler) GetHistory(c *gin.Context) {
 	earthquakes, err := h.Service.GetRecentEarthquakes()
 	if err != nil {

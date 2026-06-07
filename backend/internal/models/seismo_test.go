@@ -6,7 +6,7 @@ import (
 )
 
 func TestUnmarshalUSGS(t *testing.T) {
-	// Simulación de un fragmento real de la API del USGS
+	// Simulation of a real fragment from the USGS API
 	jsonRaw := []byte(`{
 		"id": "us7000lz8x",
 		"properties": {

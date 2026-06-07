@@ -10,12 +10,10 @@ import (
 	"seismic-monitor/backend/internal/models"
 )
 
-// USGSAdapter es el adaptador que se conecta al exterior.
 type USGSAdapter struct {
 	URL string
 }
 
-// GetEarthquakes cumple con la interfaz ports.EarthquakeProvider
 func (a *USGSAdapter) GetEarthquakes() (models.USGSResponse, error) {
 	data, err := a.fetchData(a.URL)
 	if err != nil {

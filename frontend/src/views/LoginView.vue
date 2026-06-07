@@ -3,20 +3,17 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { apiService } from '../services/api'
 
-// Initialize router for programmatic navigation
 const router = useRouter()
 
-// Reactive state variables for the form
 const email = ref('')
 const password = ref('')
 const errorMessage = ref('')
 const isLoading = ref(false)
 
 const handleLogin = async () => {
-  // 1. Reset previous errors
   errorMessage.value = ''
 
-  // 2. Client-side validation (Defensive programming to avoid unnecessary API calls)
+  // Client-side validation (Defensive programming to avoid unnecessary API calls)
   if (!email.value || !password.value) {
     errorMessage.value = 'Both email and password are required.'
     return
@@ -25,13 +22,11 @@ const handleLogin = async () => {
   isLoading.value = true
 
   try {
-    // 3. Execute the mock API call
     const response = await apiService.login({
       email: email.value,
       password: password.value
     })
 
-    // 4. Validate the contract structure and persist the session
     if (response.token) {
       // Store the JWT to satisfy the Navigation Guard
       localStorage.setItem('auth_token', response.token)
@@ -39,17 +34,14 @@ const handleLogin = async () => {
       // Store non-sensitive user data for UI purposes (like the alert radius)
       localStorage.setItem('user_data', JSON.stringify(response.user))
 
-      // 5. Force redirect to the protected map view
       router.push({ name: 'map' })
     } else {
       throw new Error('Invalid authentication payload received')
     }
   } catch (error) {
-    // Catch generic errors or specific HTTP mock rejections
     errorMessage.value = error.message || 'Authentication failed. Please verify your credentials.'
     console.error('Login process aborted:', error)
   } finally {
-    // Always remove the loading state, even if the request fails
     isLoading.value = false
   }
 }

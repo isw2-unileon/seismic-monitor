@@ -2,8 +2,8 @@ package ports
 
 import "seismic-monitor/backend/internal/models"
 
-// EarthquakeProvider es nuestro PUERTO.
-// Obliga a cualquier adaptador a devolver la estructura que nuestro sistema entiende.
+// EarthquakeProvider is our PORT.
+// Forces any adapter to return the structure our system understands.
 type EarthquakeProvider interface {
 	GetEarthquakes() (models.USGSResponse, error)
 }

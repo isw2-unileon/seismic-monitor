@@ -7,20 +7,18 @@ import (
 )
 
 func TestUSGSAdapter_GetEarthquakes(t *testing.T) {
-	// 1. Usamos tu JSON mockeado del test del parser
+	// Use the mocked JSON from the parser test
 	mockJSON := `{"features": [{"id": "us1000", "properties": {"mag": 5.5, "place": "10km Sur de León, España", "time": 1673456789000}}]}`
 
-	// 2. Usamos tu servidor mockeado del test del fetcher
+	// Use the mocked server from the fetcher test
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(mockJSON))
 	}))
 	defer server.Close()
 
-	// 3. Instanciamos nuestro adaptador con la URL falsa
 	adapter := &USGSAdapter{URL: server.URL}
 
-	// 4. Ejecutamos la función de la interfaz
 	response, err := adapter.GetEarthquakes()
 
 	if err != nil {

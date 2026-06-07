@@ -49,7 +49,6 @@ const saveSettings = async () => {
 
     await apiService.updateUserSettings(payload)
 
-    // Save to localStorage ONLY after successful server update
     localStorage.setItem('user_data', JSON.stringify(userData.value))
     alert('Preferences updated and synchronized')
   } catch (error) {

@@ -6,7 +6,6 @@ import (
 	"time"
 )
 
-// StartReportCleanupWorker ejecuta una limpieza cada 30 minutos
 func StartReportCleanupWorker(repo *database.ReportRepository) {
 	ticker := time.NewTicker(30 * time.Minute)
 
