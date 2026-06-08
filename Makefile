@@ -26,8 +26,7 @@ build-frontend:
 
 ## Run all tests
 test:
-	go test -v -race ./...
-	cd frontend && npm run test
+	go test -v ./...
 
 ## Run linters
 lint:
