@@ -32,7 +32,7 @@ cd seismic-monitor
 ### 2. Configure Environment Variables
 
 The project requires environment variables to connect to the database and other external APIs.
-You must configure the corresponding variables (for example, by copying `.env.example` to `.env` or exporting the variables locally) for the backend environment.
+You must configure the corresponding variables on your .env for the backend environment.
 
 Ensure you correctly define the database connection, secrets for JWT token generation, and any necessary API keys (like Gemini or seismic data providers).
 
