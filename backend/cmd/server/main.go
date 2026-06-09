@@ -33,28 +33,24 @@ func main() {
 
 	cfg := config.Load()
 
-	logger.Info("Intentando conectar a la BD...", "url", cfg.DatabaseURL)
+	logger.Info("Attempting to connect to the DB...", "url", cfg.DatabaseURL)
 
-	// 1. Inicializar la conexión a la base de datos
 	db, err := database.Connect(cfg.DatabaseURL)
 	if err != nil {
-		logger.Error("No se pudo conectar a la base de datos", "error", err)
+		logger.Error("Could not connect to the database", "error", err)
 		os.Exit(1)
 	}
 	defer db.Close()
-	logger.Info("Conexión a PostgreSQL establecida con éxito")
+	logger.Info("PostgreSQL connection established successfully")
 
-	// 1. Creamos la "Cola" en memoria (buffer de 100 mensajes)
 	alertQueue := make(chan models.AlertMessage, 100)
 
-	// 2. Inicializar repositorios y servicios
 	userRepo := database.NewUserRepository(db)
 	earthquakeRepo := database.NewEarthquakeRepository(db)
 	earthquakeService := services.NewEarthquakeService(earthquakeRepo)
 	jwtService := auth.NewJWTService(cfg.JWTSecret)
 	reportRepo := &database.ReportRepository{DB: db}
 
-	// 3. Inicializar handlers
 	authHandler := handlers.NewAuthHandler(userRepo, jwtService)
 	userHandler := handlers.NewUserHandler(userRepo)
 	earthquakeHandler := handlers.NewEarthquakeHandler(earthquakeService)
@@ -62,13 +58,6 @@ func main() {
 	geminiKey := os.Getenv("GEMINI_API_KEY")
 	aiProvider := &ai.GeminiAdapter{APIKey: geminiKey}
 
-	/*
-		reportHandler := &handlers.ReportHandler{
-			Repo:       reportRepo,
-			UserRepo:   userRepo,
-			AlertQueue: alertQueue, // La misma cola que usa el worker de Mailtrap
-		}
-	*/
 	reportHandler := handlers.NewReportHandler(reportRepo, userRepo, alertQueue)
 
 	gin.SetMode(cfg.GinMode)
@@ -76,15 +65,12 @@ func main() {
 	r := gin.New()
 	r.Use(gin.Logger(), gin.Recovery())
 
-	// Habilitar CORS si es necesario (puedes añadir middleware aquí más tarde)
-
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
 	apiV1 := r.Group("/api/v1")
 	{
-		// Rutas públicas
 		apiV1.GET("/earthquakes", earthquakeHandler.GetEarthquakes)
 		apiV1.GET("/earthquakes/history", earthquakeHandler.GetHistory)
 
@@ -94,7 +80,6 @@ func main() {
 			users.POST("/login", authHandler.Login)
 		}
 
-		// Rutas protegidas
 		protected := apiV1.Group("/")
 		protected.Use(middleware.AuthMiddleware(jwtService))
 		{

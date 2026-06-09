@@ -20,7 +20,7 @@ const pendingLocation = ref(null)
 
 const selectedMarkerId = ref(null) 
 const showDeleteConfirm = ref(false) 
-let resizeListener = null // Referencia para el evento de redimensión
+let resizeListener = null // Reference for the resize event
 
 const getIconUrl = (name) => new URL(`../assets/icons/${name}.png`, import.meta.url).href
 const toggleMenu = () => isMenuOpen.value = !isMenuOpen.value
@@ -28,10 +28,10 @@ const navigateTo = (routeName) => { isMenuOpen.value = false; router.push({ name
 const handleLogout = () => { localStorage.removeItem('auth_token'); localStorage.removeItem('user_data'); router.push({ name: 'login' }); }
 
 const customMarkerIcon = L.icon({
-  iconUrl: getIconUrl('marker'), // Apunta a src/assets/icons/marker.png
-  iconSize: [48, 48],            // Tamaño en el que se pintará [ancho, alto]
-  iconAnchor: [24, 48],          // Punto del icono que ancla a la lat/lng (centro-base)
-  popupAnchor: [0, -64]          // Punto desde el que emerge el popup (centro-arriba)
+  iconUrl: getIconUrl('marker'),
+  iconSize: [48, 48],
+  iconAnchor: [24, 48],          // Point of the icon that anchors to the lat/lng (center-base)
+  popupAnchor: [0, -64]          // Point from which the popup emerges (center-top)
 })
 
 
@@ -121,20 +121,19 @@ onMounted(() => {
     maxBounds: earthBounds, 
     maxBoundsViscosity: 1.0, 
     preferCanvas: true, 
-    zoomAnimation: true, // Mantienes tus animaciones
-    zoomSnap: 0.1 // CRÍTICO: Permite fracciones de zoom para que el mapa encaje al milímetro
+    zoomAnimation: true,
+    zoomSnap: 0.1 // CRITICAL: Allows zoom fractions so the map fits perfectly
   })
 
-  // CÁLCULO DINÁMICO DEL ZOOM MÍNIMO HORIZONTAL
+  // DYNAMIC CALCULATION OF HORIZONTAL MINIMUM ZOOM
   const setDynamicMinZoom = () => {
     if (!mapInstance.value || !mapContainer.value) return
     const containerWidth = mapContainer.value.offsetWidth
-    // El mundo mide 256px en zoom 0. Calculamos el zoom para que cubra exactamente tu pantalla
+    // The world measures 256px at zoom 0. Calculate zoom to cover the screen exactly
     const minZ = Math.log2(containerWidth / 256)
     mapInstance.value.setMinZoom(minZ)
   }
 
-  // Ejecutamos la primera vez y escuchamos cambios de tamaño de ventana
   setDynamicMinZoom()
   resizeListener = () => setDynamicMinZoom()
   window.addEventListener('resize', resizeListener)
@@ -156,12 +155,12 @@ onMounted(() => {
         const coords = [eq.geometry.coordinates[1], eq.geometry.coordinates[0]]
         const mag = eq.properties.magnitude
         
-        // Escala de colores de Verde a Rojo
-        let color = '#4cd137' // < 3: Verde
-        if (mag >= 7) color = '#c23616'      // >= 7: Granate/Rojo oscuro
-        else if (mag >= 5) color = '#e84118' // 5-7: Rojo
-        else if (mag >= 4) color = '#e1b12c' // 4-5: Naranja/Ámbar
-        else if (mag >= 3) color = '#fbc531' // 3-4: Amarillo
+        // Color scale from Green to Red
+        let color = '#4cd137' // < 3: Green
+        if (mag >= 7) color = '#c23616'      // >= 7: Maroon/Dark Red
+        else if (mag >= 5) color = '#e84118' // 5-7: Red
+        else if (mag >= 4) color = '#e1b12c' // 4-5: Orange/Amber
+        else if (mag >= 3) color = '#fbc531' // 3-4: Yellow
 
         const circle = L.circleMarker(coords, {
           radius: Math.max(mag * 3.5, 4),

@@ -1,18 +1,10 @@
-// src/services/api.js
-
 const API_BASE_URL = '/api/v1';
 
-/**
- * Generates the USGS API URL for earthquakes with custom filters.
- */
 const getUSGSUrl = (minMagnitude = 1, hours = 1) => {
   const startTime = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
   return `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&minmagnitude=${minMagnitude}&orderby=time&starttime=${startTime}`;
 };
 
-/**
- * Maps USGS GeoJSON data to the format expected by the frontend.
- */
 const mapUSGSData = (data) => {
   if (!data || !data.features) return { type: 'FeatureCollection', features: [] };
   
@@ -58,10 +50,6 @@ export const apiService = {
     }
   },
 
-  /**
-   * Simula el inicio de sesión de un usuario o conecta con el backend.
-   * @param {Object} credentials - { email, password }
-   */
   async login(credentials) {
     if (!credentials.email || !credentials.password) {
       throw new Error("Missing email or password");
@@ -81,10 +69,6 @@ export const apiService = {
     return await response.json();
   },
 
-  /**
-   * Registers a new user.
-   * @param {Object} credentials - { email, password }
-   */
   async register(credentials) {
     if (!credentials.email || !credentials.password) {
       throw new Error("Missing email or password");
@@ -104,10 +88,6 @@ export const apiService = {
     return await response.json();
   },
 
-  /**
-   * Updates user location and alert preferences.
-   * @param {Object} data - { latitude, longitude, alert_radius, min_magnitude }
-   */
   async updateUserSettings(data) {
     const token = localStorage.getItem('auth_token');
     const response = await fetch('/api/v1/users/location', {

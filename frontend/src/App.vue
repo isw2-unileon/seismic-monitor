@@ -7,12 +7,12 @@ import { RouterView } from 'vue-router'
 </template>
 
 <style>
-/* Reset global: El mapa y el login deben ocupar todo el espacio disponible */
+/* Global reset: Map and login should occupy all available space */
 body {
   margin: 0;
   padding: 0;
   font-family: system-ui, -apple-system, sans-serif;
-  background-color: #1a1a2e; /* Añadimos el color de fondo global para evitar flashes blancos */
+  background-color: #1a1a2e; /* Add global background color to avoid white flashes */
 }
 
 #app {

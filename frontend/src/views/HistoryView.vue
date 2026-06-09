@@ -35,7 +35,6 @@ const applyFilters = () => {
 
 const goBack = () => router.push({ name: 'map' });
 
-// Helper function to format the time
 const formatTime = (isoString) => {
   const date = new Date(isoString);
   return date.toLocaleString();

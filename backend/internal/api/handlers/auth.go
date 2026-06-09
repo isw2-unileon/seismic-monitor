@@ -23,67 +23,64 @@ func NewAuthHandler(repo *database.UserRepository, jwtService *auth.JWTService) 
 	}
 }
 
-// Register maneja el registro de nuevos usuarios
+// Register handles the registration of new users
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req models.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "datos de registro inválidos"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid registration data"})
 		return
 	}
 
-	// Verificar si el usuario ya existe
 	existing, _ := h.Repo.FindUserByEmail(req.Email)
 	if existing != nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "el correo ya está registrado"})
+		c.JSON(http.StatusConflict, gin.H{"error": "email already registered"})
 		return
 	}
 
-	// Hashear contraseña
 	hashed, err := database.HashPassword(req.Password)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al procesar la contraseña"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error processing password"})
 		return
 	}
 
 	user := &models.User{
 		Email:        req.Email,
 		PasswordHash: hashed,
-		AlertRadius:  100, // Valor por defecto en km
-		MinMagnitude: 3.0, // Valor por defecto de magnitud
+		AlertRadius:  100,
+		MinMagnitude: 3.0,
 	}
 
 	if err := h.Repo.CreateUser(user); err != nil {
-		// Log the underlying error for debugging purposes
 		fmt.Printf("Error during CreateUser: %v\n", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "no se pudo crear el usuario"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not create user"})
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "usuario registrado con éxito"})
+	c.JSON(http.StatusCreated, gin.H{"message": "user registered successfully"})
 }
 
-// Login maneja la autenticación y devuelve un JWT
+// Login handles authentication and returns a JWT
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req models.LoginRequest
 	if err := h.ShouldBind(c, &req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "email o contraseña requeridos"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "email and password required"})
 		return
 	}
 
 	user, err := h.Repo.FindUserByEmail(req.Email)
 	if err != nil || user == nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "credenciales inválidas"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
 		return
 	}
 
 	if !database.CheckPasswordHash(req.Password, user.PasswordHash) {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "credenciales inválidas"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
 		return
 	}
 
 	token, err := h.JWTService.GenerateToken(user.ID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "no se pudo generar el token"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not generate token"})
 		return
 	}
 
@@ -98,7 +95,6 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	})
 }
 
-// Helper para binding (evita repetir código)
 func (h *AuthHandler) ShouldBind(c *gin.Context, obj interface{}) error {
 	return c.ShouldBindJSON(obj)
 }

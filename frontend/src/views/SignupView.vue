@@ -3,10 +3,8 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { apiService } from '../services/api'
 
-// Initialize router for programmatic navigation
 const router = useRouter()
 
-// Reactive state variables for the form
 const email = ref('')
 const password = ref('')
 const errorMessage = ref('')
@@ -14,11 +12,9 @@ const successMessage = ref('')
 const isLoading = ref(false)
 
 const handleSignup = async () => {
-  // 1. Reset previous messages
   errorMessage.value = ''
   successMessage.value = ''
 
-  // 2. Client-side validation
   if (!email.value || !password.value) {
     errorMessage.value = 'Both email and password are required.'
     return
@@ -32,7 +28,6 @@ const handleSignup = async () => {
   isLoading.value = true
 
   try {
-    // 3. Execute the API call
     await apiService.register({
       email: email.value,
       password: password.value
@@ -40,7 +35,7 @@ const handleSignup = async () => {
 
     successMessage.value = 'Registration successful! Redirecting to login...'
     
-    // 4. Redirect to login after a short delay
+    // Redirect to login after a short delay
     setTimeout(() => {
       router.push({ name: 'login' })
     }, 2000)
